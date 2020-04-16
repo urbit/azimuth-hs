@@ -1,7 +1,7 @@
 cabal-version: 2.4
-name:          azimuth
+name:          urbit-azimuth
 version:       0.1.0.0
-synopsis:      Urbit HD Wallet Key Derivation
+synopsis:      Urbit Azimuth Ethereum Contract
 homepage:      https://github.com/urbit/ylem
 license:       MIT
 license-file:  LICENSE
@@ -75,4 +75,4 @@ library
   import:          base
   hs-source-dirs:  lib
   build-depends:   web3
-  exposed-modules: Urbit.Azimuth, Urbit.Azimuth.Contract
+  exposed-modules: Urbit.Azimuth
