@@ -1,0 +1,78 @@
+cabal-version: 2.4
+name:          azimuth
+version:       0.1.0.0
+synopsis:      Urbit HD Wallet Key Derivation
+homepage:      https://github.com/urbit/ylem
+license:       MIT
+license-file:  LICENSE
+author:        Brendan Hay
+maintainer:    maintainer@brendanhay.nz
+copyright:     2020 Brendan Hay
+data-files:    azimuth.json
+
+source-repository head
+  type:     git
+  location: https://github.com/urbit/ylem
+  subdir:   haskell/urbit-azimuth
+
+common base
+  default-language:   Haskell2010
+  ghc-options:
+    -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wcompat -Wnoncanonical-monad-instances
+    -Wmissing-deriving-strategies
+
+  default-extensions:
+    BangPatterns
+    BinaryLiterals
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    DoAndIfThenElse
+    DuplicateRecordFields
+    EmptyDataDecls
+    ExistentialQuantification
+    ExplicitNamespaces
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedLabels
+    OverloadedStrings
+    PartialTypeSignatures
+    PatternGuards
+    PatternSynonyms
+    PolyKinds
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    TypeSynonymInstances
+    ViewPatterns
+    StrictData
+
+  build-depends:      base >=4.12 && <5
+
+library
+  import:          base
+  hs-source-dirs:  lib
+  build-depends:   web3
+  exposed-modules: Urbit.Azimuth, Urbit.Azimuth.Contract
