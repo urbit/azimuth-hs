@@ -1,6 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
+{-# OPTIONS_GHC -ddump-splices #-}
 
 module Urbit.Azimuth where
 
