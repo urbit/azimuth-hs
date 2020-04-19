@@ -80,7 +80,9 @@ library
     , exceptions
     , mtl
     , web3
-
+    , data-default-class
+    , urbit-hob
+    
   exposed-modules:
     Urbit.Azimuth
     Urbit.Azimuth.Contract

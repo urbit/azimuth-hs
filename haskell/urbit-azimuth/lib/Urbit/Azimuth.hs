@@ -12,17 +12,38 @@ module Urbit.Azimuth
     , Quantity
     , getLatestBlock
 
-    , Point   (..)
-    , getPoint
+    , Point (..)
+    , Details (..)
+    , Info (..)
+    , Rights (..)
+    
+    , getPointSize
+    , getPointDetails
+    , getPointInfo
+    , getPointRights
 
-    , Rights  (..)
-    , getRights
+    , hasNetworkKeys
+    
+    , isParent
+    
+    , canManage
+    , canSpawn
+    , canVote
+    , canTransfer
+
+    , isOwner
+    , isManagementProxy
+    , isSpawnProxy
+    , isVotingProxy
+    , isTransferProxy
     ) where
 
 import Control.Monad.Catch        (MonadThrow)
 import Control.Monad.Except       (ExceptT, MonadError)
 import Control.Monad.IO.Class     (MonadIO)
 import Control.Monad.State.Strict (MonadState, StateT)
+
+import Data.Solidity.Prim.Address (Address)
 
 import Network.Ethereum.Account      (DefaultAccount)
 import Network.Ethereum.Api.Provider (Web3Error (..))
@@ -31,6 +52,7 @@ import Network.JsonRpc.TinyClient    (JsonRpcClient)
 
 import Prelude
 
+import qualified Urbit.Ob
 import qualified Control.Exception                 as Exception
 import qualified Control.Monad.Except              as Except
 import qualified Control.Monad.State.Strict        as State
@@ -39,6 +61,7 @@ import qualified Network.Ethereum.Account          as Ethereum.Account
 import qualified Network.Ethereum.Account.Internal as Ethereum.Account.Internal
 import qualified Network.Ethereum.Api.Eth          as Ethereum.Eth
 import qualified Network.Ethereum.Api.Types        as Ethereum.Types
+import qualified Data.Default.Class as Default
 import qualified Network.Ethereum.Ens              as Ethereum.Ens
 import qualified Network.JsonRpc.TinyClient        as Web3.Client
 import qualified Urbit.Azimuth.Contract
@@ -111,54 +134,171 @@ getLatestBlock
 getLatestBlock =
     Ethereum.Eth.blockNumber
 
-data Point = Point
-    { pointEncryptionKey      :: Solidity.Prim.BytesN 32
-    , pointAuthenticationKey  :: Solidity.Prim.BytesN 32
-    , pointHasSponsor         :: Bool
-    , pointActive             :: Bool
-    , pointEscapeRequested    :: Bool
-    , pointSponsor            :: Solidity.Prim.UIntN 32
-    , pointEscapeRequestedTo  :: Solidity.Prim.UIntN 32
-    , pointCryptoSuiteVersion :: Solidity.Prim.UIntN 32
-    , pointKeyRevisionNumber  :: Solidity.Prim.UIntN 32
-    , pointContinuityNumber   :: Solidity.Prim.UIntN 32
+newtype Point = Point (Solidity.Prim.UIntN 32)
+    deriving stock (Show, Eq)
+
+getPointSize
+    :: Point
+    -> Urbit.Ob.Class
+getPointSize (Point point) =
+    -- Size <$> Urbit.Azimuth.Contract.getPointSize point
+    if | point < 256   -> Urbit.Ob.Galaxy
+       | point < 65536 -> Urbit.Ob.Star
+       | otherwise     -> Urbit.Ob.Planet
+
+data Details = Details
+    { detailsPoint :: Point
+    , detailsInfo  :: Info
+    , detailsRights :: Rights
     } deriving stock (Show, Eq)
 
-getPoint
-    :: Solidity.Prim.UIntN 32
-    -> Azimuth Point
-getPoint point = do
-    ( pointEncryptionKey
-        , pointAuthenticationKey
-        , pointHasSponsor
-        , pointActive
-        , pointEscapeRequested
-        , pointSponsor
-        , pointEscapeRequestedTo
-        , pointCryptoSuiteVersion
-        , pointKeyRevisionNumber
-        , pointContinuityNumber
+getPointDetails
+    :: Point
+    -> Azimuth Details
+getPointDetails point =
+    Details point
+        <$> getPointInfo   point
+        <*> getPointRights point
+
+data Info = Info
+    { infoEncryptionKey      :: Solidity.Prim.BytesN 32
+    , infoAuthenticationKey  :: Solidity.Prim.BytesN 32
+    , infoHasSponsor         :: Bool
+    , infoActive             :: Bool
+    , infoEscapeRequested    :: Bool
+    , infoSponsor            :: Solidity.Prim.UIntN 32
+    , infoEscapeRequestedTo  :: Solidity.Prim.UIntN 32
+    , infoCryptoSuiteVersion :: Solidity.Prim.UIntN 32
+    , infoKeyRevisionNumber  :: Solidity.Prim.UIntN 32
+    , infoContinuityNumber   :: Solidity.Prim.UIntN 32
+    } deriving stock (Show, Eq)
+
+getPointInfo
+    :: Point
+    -> Azimuth Info
+getPointInfo (Point point) = do
+    ( infoEncryptionKey
+        , infoAuthenticationKey
+        , infoHasSponsor
+        , infoActive
+        , infoEscapeRequested
+        , infoSponsor
+        , infoEscapeRequestedTo
+        , infoCryptoSuiteVersion
+        , infoKeyRevisionNumber
+        , infoContinuityNumber
         ) <- Urbit.Azimuth.Contract.points point
 
-    pure Point{..}
+    pure Info{..}
 
 data Rights = Rights
     { rightsOwner           :: Solidity.Prim.Address
-    , rightsManagementProxy :: Solidity.Prim.Address
-    , rightsSpawnProxy      :: Solidity.Prim.Address
-    , rightsVotingProxy     :: Solidity.Prim.Address
-    , rightsTransferProxy   :: Solidity.Prim.Address
+    , rightsManagementProxy :: Maybe Solidity.Prim.Address
+    , rightsSpawnProxy      :: Maybe Solidity.Prim.Address
+    , rightsVotingProxy     :: Maybe Solidity.Prim.Address
+    , rightsTransferProxy   :: Maybe Solidity.Prim.Address
     } deriving stock (Show, Eq)
 
-getRights
-    :: Solidity.Prim.UIntN 32
+getPointRights
+    :: Point
     -> Azimuth Rights
-getRights point = do
+getPointRights (Point point) = do
+    let unzero x
+            | isZeroAddress x = Nothing
+            | otherwise       = Just x
+
     ( rightsOwner
-        , rightsManagementProxy
-        , rightsSpawnProxy
-        , rightsVotingProxy
-        , rightsTransferProxy
+        , unzero -> rightsManagementProxy
+        , unzero -> rightsSpawnProxy
+        , unzero -> rightsVotingProxy
+        , unzero -> rightsTransferProxy
         ) <- Urbit.Azimuth.Contract.rights point
 
     pure Rights{..}
+
+hasNetworkKeys
+    :: Info
+    -> Bool
+hasNetworkKeys info =
+    infoKeyRevisionNumber info > 0
+
+isParent
+    :: Urbit.Ob.Class
+    -> Bool
+isParent = \case
+    Urbit.Ob.Galaxy -> True
+    Urbit.Ob.Star   -> True
+    _               -> False
+
+canManage
+    :: Details
+    -> Address
+    -> Bool
+canManage Details{detailsRights} address =
+    isOwner detailsRights address || isManagementProxy detailsRights address
+
+canSpawn
+    :: Details
+    -> Address
+    -> Bool
+canSpawn Details{detailsPoint, detailsInfo, detailsRights} address =
+    isParent (getPointSize detailsPoint)
+        && hasNetworkKeys detailsInfo
+        && (isOwner detailsRights address || isSpawnProxy detailsRights address)
+
+canVote
+    :: Details
+    -> Address
+    -> Bool
+canVote Details{detailsPoint, detailsInfo, detailsRights} address =
+    (Urbit.Ob.Galaxy == getPointSize detailsPoint)
+        && infoActive detailsInfo
+        && (isOwner detailsRights address || isVotingProxy detailsRights address)
+
+canTransfer
+    :: Details
+    -> Address
+    -> Bool
+canTransfer Details{detailsRights} address =
+    isOwner detailsRights address || isTransferProxy detailsRights address
+
+isOwner
+    :: Rights
+    -> Address
+    -> Bool
+isOwner rights =
+    (==) (rightsOwner rights)
+
+isManagementProxy
+    :: Rights
+    -> Address
+    -> Bool
+isManagementProxy rights =
+    (==) (rightsManagementProxy rights) . Just
+
+isSpawnProxy
+    :: Rights
+    -> Address
+    -> Bool
+isSpawnProxy rights =
+    (==) (rightsSpawnProxy rights) . Just
+
+isVotingProxy
+    :: Rights
+    -> Address
+    -> Bool
+isVotingProxy rights =
+    (==) (rightsVotingProxy rights) . Just
+
+isTransferProxy
+    :: Rights
+    -> Address
+    -> Bool
+isTransferProxy rights =
+    (==) (rightsTransferProxy rights) . Just
+
+isZeroAddress
+    :: Address
+    -> Bool
+isZeroAddress =
+    (==) Default.def
