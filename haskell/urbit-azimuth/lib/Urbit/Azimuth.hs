@@ -4,7 +4,6 @@ module Urbit.Azimuth
 
     , Azimuth
     , runAzimuth
-    , runAzimuthWith
 
     , Contract (..)
     , getContract
@@ -13,16 +12,17 @@ module Urbit.Azimuth
     , getLatestBlock
 
     , Point (..)
-    , Details (..)
-    , Info (..)
+    , PointDetails (..)
+    , PointInfo (..)
     , Rights (..)
     
     , getPointSize
     , getPointDetails
     , getPointInfo
-    , getPointRights
+    , getRights
 
     , hasNetworkKeys
+    , canManageNetworkKeys
     
     , isParent
     
@@ -40,7 +40,8 @@ module Urbit.Azimuth
 
 import Control.Monad.Catch        (MonadThrow)
 import Control.Monad.Except       (ExceptT, MonadError)
-import Control.Monad.IO.Class     (MonadIO)
+import Control.Monad.IO.Class     (MonadIO (liftIO))
+import Control.Monad.Trans (lift)
 import Control.Monad.State.Strict (MonadState, StateT)
 
 import Data.Solidity.Prim.Address (Address)
@@ -98,21 +99,15 @@ runWeb3 client (Web3 action) =
 -- for now to avoid the batshit constraints of the @web3@ library.
 type Azimuth = DefaultAccount Web3
 
+instance MonadIO Azimuth where
+    liftIO = lift . liftIO 
+
 runAzimuth
-    :: Azimuth a
-    -> Web3 a
-runAzimuth action = do
-    contract <- getContract
-    block    <- getLatestBlock
-
-    runAzimuthWith contract block action
-
-runAzimuthWith
     :: Contract
     -> Quantity
     -> Azimuth a
     -> Web3 a
-runAzimuthWith (Contract address) block action =
+runAzimuth (Contract address) block action =
     Ethereum.Account.withAccount () $
         Ethereum.Account.withParam (\param ->
             param { Ethereum.Account.Internal._to    = Just address
@@ -135,7 +130,8 @@ getLatestBlock =
     Ethereum.Eth.blockNumber
 
 newtype Point = Point (Solidity.Prim.UIntN 32)
-    deriving stock (Show, Eq)
+    deriving stock (Show, Eq, Ord)
+    deriving newtype (Real, Num, Enum, Integral)
 
 getPointSize
     :: Point
@@ -146,21 +142,19 @@ getPointSize (Point point) =
        | point < 65536 -> Urbit.Ob.Star
        | otherwise     -> Urbit.Ob.Planet
 
-data Details = Details
-    { detailsPoint :: Point
-    , detailsInfo  :: Info
+data PointDetails = PointDetails
+    { detailsPoint  :: Point
+    , detailsPointInfo   :: PointInfo
     , detailsRights :: Rights
     } deriving stock (Show, Eq)
 
 getPointDetails
     :: Point
-    -> Azimuth Details
+    -> Azimuth PointDetails
 getPointDetails point =
-    Details point
-        <$> getPointInfo   point
-        <*> getPointRights point
+    PointDetails point <$> getPointInfo point <*> getRights point
 
-data Info = Info
+data PointInfo = PointInfo
     { infoEncryptionKey      :: Solidity.Prim.BytesN 32
     , infoAuthenticationKey  :: Solidity.Prim.BytesN 32
     , infoHasSponsor         :: Bool
@@ -175,7 +169,7 @@ data Info = Info
 
 getPointInfo
     :: Point
-    -> Azimuth Info
+    -> Azimuth PointInfo
 getPointInfo (Point point) = do
     ( infoEncryptionKey
         , infoAuthenticationKey
@@ -189,7 +183,7 @@ getPointInfo (Point point) = do
         , infoContinuityNumber
         ) <- Urbit.Azimuth.Contract.points point
 
-    pure Info{..}
+    pure PointInfo{..}
 
 data Rights = Rights
     { rightsOwner           :: Solidity.Prim.Address
@@ -199,10 +193,10 @@ data Rights = Rights
     , rightsTransferProxy   :: Maybe Solidity.Prim.Address
     } deriving stock (Show, Eq)
 
-getPointRights
+getRights
     :: Point
     -> Azimuth Rights
-getPointRights (Point point) = do
+getRights (Point point) = do
     let unzero x
             | isZeroAddress x = Nothing
             | otherwise       = Just x
@@ -217,10 +211,17 @@ getPointRights (Point point) = do
     pure Rights{..}
 
 hasNetworkKeys
-    :: Info
+    :: PointInfo
     -> Bool
 hasNetworkKeys info =
     infoKeyRevisionNumber info > 0
+
+canManageNetworkKeys
+    :: PointDetails
+    -> Address
+    -> Bool
+canManageNetworkKeys details address =
+    canManage details address && hasNetworkKeys (detailsPointInfo details)
 
 isParent
     :: Urbit.Ob.Class
@@ -231,35 +232,35 @@ isParent = \case
     _               -> False
 
 canManage
-    :: Details
+    :: PointDetails
     -> Address
     -> Bool
-canManage Details{detailsRights} address =
+canManage PointDetails{detailsRights} address =
     isOwner detailsRights address || isManagementProxy detailsRights address
 
 canSpawn
-    :: Details
+    :: PointDetails
     -> Address
     -> Bool
-canSpawn Details{detailsPoint, detailsInfo, detailsRights} address =
+canSpawn PointDetails{detailsPoint, detailsPointInfo, detailsRights} address =
     isParent (getPointSize detailsPoint)
-        && hasNetworkKeys detailsInfo
+        && hasNetworkKeys detailsPointInfo
         && (isOwner detailsRights address || isSpawnProxy detailsRights address)
 
 canVote
-    :: Details
+    :: PointDetails
     -> Address
     -> Bool
-canVote Details{detailsPoint, detailsInfo, detailsRights} address =
+canVote PointDetails{detailsPoint, detailsPointInfo, detailsRights} address =
     (Urbit.Ob.Galaxy == getPointSize detailsPoint)
-        && infoActive detailsInfo
+        && infoActive detailsPointInfo
         && (isOwner detailsRights address || isVotingProxy detailsRights address)
 
 canTransfer
-    :: Details
+    :: PointDetails
     -> Address
     -> Bool
-canTransfer Details{detailsRights} address =
+canTransfer PointDetails{detailsRights} address =
     isOwner detailsRights address || isTransferProxy detailsRights address
 
 isOwner
