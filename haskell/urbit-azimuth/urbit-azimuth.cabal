@@ -24,6 +24,7 @@ common base
     -Wno-all-missed-specialisations -Wno-star-is-type
 
   default-extensions:
+    NoImplicitPrelude
     BangPatterns
     BinaryLiterals
     ConstraintKinds
@@ -38,7 +39,6 @@ common base
     DerivingVia
     DoAndIfThenElse
     DuplicateRecordFields
-    NoImplicitPrelude
     EmptyDataDecls
     ExistentialQuantification
     ExplicitNamespaces
@@ -77,12 +77,12 @@ library
   import:          base
   hs-source-dirs:  lib
   build-depends:
+    , data-default-class
     , exceptions
     , mtl
-    , web3
-    , data-default-class
     , urbit-hob
-    
+    , web3
+
   exposed-modules:
     Urbit.Azimuth
     Urbit.Azimuth.Contract

@@ -15,7 +15,7 @@ module Urbit.Azimuth
     , PointDetails (..)
     , PointInfo (..)
     , Rights (..)
-    
+
     , getPointSize
     , getPointDetails
     , getPointInfo
@@ -23,9 +23,9 @@ module Urbit.Azimuth
 
     , hasNetworkKeys
     , canManageNetworkKeys
-    
+
     , isParent
-    
+
     , canManage
     , canSpawn
     , canVote
@@ -41,8 +41,8 @@ module Urbit.Azimuth
 import Control.Monad.Catch        (MonadThrow)
 import Control.Monad.Except       (ExceptT, MonadError)
 import Control.Monad.IO.Class     (MonadIO (liftIO))
-import Control.Monad.Trans (lift)
 import Control.Monad.State.Strict (MonadState, StateT)
+import Control.Monad.Trans        (lift)
 
 import Data.Solidity.Prim.Address (Address)
 
@@ -53,19 +53,19 @@ import Network.JsonRpc.TinyClient    (JsonRpcClient)
 
 import Prelude
 
-import qualified Urbit.Ob
 import qualified Control.Exception                 as Exception
 import qualified Control.Monad.Except              as Except
 import qualified Control.Monad.State.Strict        as State
+import qualified Data.Default.Class                as Default
 import qualified Data.Solidity.Prim                as Solidity.Prim
 import qualified Network.Ethereum.Account          as Ethereum.Account
 import qualified Network.Ethereum.Account.Internal as Ethereum.Account.Internal
 import qualified Network.Ethereum.Api.Eth          as Ethereum.Eth
 import qualified Network.Ethereum.Api.Types        as Ethereum.Types
-import qualified Data.Default.Class as Default
 import qualified Network.Ethereum.Ens              as Ethereum.Ens
 import qualified Network.JsonRpc.TinyClient        as Web3.Client
 import qualified Urbit.Azimuth.Contract
+import qualified Urbit.Ob
 
 -- | A wrapper for the 'Ethereum.Provider.Web3' monad that provides a
 -- 'MonadFail' instance to satisfy the functions in 'Urbit.Azimuth' generated
@@ -100,7 +100,7 @@ runWeb3 client (Web3 action) =
 type Azimuth = DefaultAccount Web3
 
 instance MonadIO Azimuth where
-    liftIO = lift . liftIO 
+    liftIO = lift . liftIO
 
 runAzimuth
     :: Contract
@@ -143,9 +143,9 @@ getPointSize (Point point) =
        | otherwise     -> Urbit.Ob.Planet
 
 data PointDetails = PointDetails
-    { detailsPoint  :: Point
-    , detailsPointInfo   :: PointInfo
-    , detailsRights :: Rights
+    { detailsPoint     :: Point
+    , detailsPointInfo :: PointInfo
+    , detailsRights    :: Rights
     } deriving stock (Show, Eq)
 
 getPointDetails
