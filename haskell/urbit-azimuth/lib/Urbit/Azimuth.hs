@@ -11,12 +11,10 @@ module Urbit.Azimuth
     , Quantity
     , getLatestBlock
 
-    , Point (..)
     , PointDetails (..)
     , PointInfo (..)
     , Rights (..)
 
-    , getPointSize
     , getPointDetails
     , getPointInfo
     , getRights
@@ -46,12 +44,16 @@ import Control.Monad.Trans        (lift)
 
 import Data.Solidity.Prim.Address (Address)
 
+import GHC.Generics (Generic)
+
 import Network.Ethereum.Account      (DefaultAccount)
 import Network.Ethereum.Api.Provider (Web3Error (..))
 import Network.Ethereum.Api.Types    (Quantity)
 import Network.JsonRpc.TinyClient    (JsonRpcClient)
 
 import Prelude
+
+import Urbit.Ob (Patp)
 
 import qualified Control.Exception                 as Exception
 import qualified Control.Monad.Except              as Except
@@ -129,30 +131,19 @@ getLatestBlock
 getLatestBlock =
     Ethereum.Eth.blockNumber
 
-newtype Point = Point (Solidity.Prim.UIntN 32)
-    deriving stock (Show, Eq, Ord)
-    deriving newtype (Real, Num, Enum, Integral)
-
-getPointSize
-    :: Point
-    -> Urbit.Ob.Class
-getPointSize (Point point) =
-    -- Size <$> Urbit.Azimuth.Contract.getPointSize point
-    if | point < 256   -> Urbit.Ob.Galaxy
-       | point < 65536 -> Urbit.Ob.Star
-       | otherwise     -> Urbit.Ob.Planet
-
 data PointDetails = PointDetails
-    { detailsPoint     :: Point
+    { detailsPoint     :: Patp
     , detailsPointInfo :: PointInfo
     , detailsRights    :: Rights
-    } deriving stock (Show, Eq)
+    } deriving stock (Show, Eq, Generic)
 
 getPointDetails
-    :: Point
+    :: Patp
     -> Azimuth PointDetails
-getPointDetails point =
-    PointDetails point <$> getPointInfo point <*> getRights point
+getPointDetails ship =
+    PointDetails ship
+        <$> getPointInfo ship
+        <*> getRights ship
 
 data PointInfo = PointInfo
     { infoEncryptionKey      :: Solidity.Prim.BytesN 32
@@ -165,12 +156,12 @@ data PointInfo = PointInfo
     , infoCryptoSuiteVersion :: Solidity.Prim.UIntN 32
     , infoKeyRevisionNumber  :: Solidity.Prim.UIntN 32
     , infoContinuityNumber   :: Solidity.Prim.UIntN 32
-    } deriving stock (Show, Eq)
+    } deriving stock (Show, Eq, Generic)
 
 getPointInfo
-    :: Point
+    :: Patp
     -> Azimuth PointInfo
-getPointInfo (Point point) = do
+getPointInfo ship = do
     ( infoEncryptionKey
         , infoAuthenticationKey
         , infoHasSponsor
@@ -181,7 +172,8 @@ getPointInfo (Point point) = do
         , infoCryptoSuiteVersion
         , infoKeyRevisionNumber
         , infoContinuityNumber
-        ) <- Urbit.Azimuth.Contract.points point
+        ) <- Urbit.Azimuth.Contract.points
+                 (fromIntegral (Urbit.Ob.fromPatp ship))
 
     pure PointInfo{..}
 
@@ -191,12 +183,12 @@ data Rights = Rights
     , rightsSpawnProxy      :: Maybe Solidity.Prim.Address
     , rightsVotingProxy     :: Maybe Solidity.Prim.Address
     , rightsTransferProxy   :: Maybe Solidity.Prim.Address
-    } deriving stock (Show, Eq)
+    } deriving stock (Show, Eq, Generic)
 
 getRights
-    :: Point
+    :: Patp
     -> Azimuth Rights
-getRights (Point point) = do
+getRights ship = do
     let unzero x
             | isZeroAddress x = Nothing
             | otherwise       = Just x
@@ -206,7 +198,8 @@ getRights (Point point) = do
         , unzero -> rightsSpawnProxy
         , unzero -> rightsVotingProxy
         , unzero -> rightsTransferProxy
-        ) <- Urbit.Azimuth.Contract.rights point
+        ) <- Urbit.Azimuth.Contract.rights
+                 (fromIntegral (Urbit.Ob.fromPatp ship))
 
     pure Rights{..}
 
@@ -224,12 +217,13 @@ canManageNetworkKeys details address =
     canManage details address && hasNetworkKeys (detailsPointInfo details)
 
 isParent
-    :: Urbit.Ob.Class
+    :: Patp
     -> Bool
-isParent = \case
-    Urbit.Ob.Galaxy -> True
-    Urbit.Ob.Star   -> True
-    _               -> False
+isParent ship =
+    case Urbit.Ob.clan ship of
+        Urbit.Ob.Galaxy -> True
+        Urbit.Ob.Star   -> True
+        _               -> False
 
 canManage
     :: PointDetails
@@ -243,7 +237,7 @@ canSpawn
     -> Address
     -> Bool
 canSpawn PointDetails{detailsPoint, detailsPointInfo, detailsRights} address =
-    isParent (getPointSize detailsPoint)
+    isParent detailsPoint
         && hasNetworkKeys detailsPointInfo
         && (isOwner detailsRights address || isSpawnProxy detailsRights address)
 
@@ -252,7 +246,7 @@ canVote
     -> Address
     -> Bool
 canVote PointDetails{detailsPoint, detailsPointInfo, detailsRights} address =
-    (Urbit.Ob.Galaxy == getPointSize detailsPoint)
+    (Urbit.Ob.Galaxy == Urbit.Ob.clan detailsPoint)
         && infoActive detailsPointInfo
         && (isOwner detailsRights address || isVotingProxy detailsRights address)
 
