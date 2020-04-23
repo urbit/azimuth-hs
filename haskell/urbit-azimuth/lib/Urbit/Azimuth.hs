@@ -161,7 +161,8 @@ data Rights
 
 getRights :: Patp -> Azimuth Rights
 getRights ship = do
-    let unzero x
+    let
+        unzero x
             | isZeroAddress x = Nothing
             | otherwise       = Just x
 
