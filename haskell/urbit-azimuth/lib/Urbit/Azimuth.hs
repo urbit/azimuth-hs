@@ -28,36 +28,36 @@ module Urbit.Azimuth
     )
 where
 
-import Control.Monad.Catch        (MonadThrow)
-import Control.Monad.Except       (ExceptT, MonadError)
-import Control.Monad.IO.Class     (MonadIO (liftIO))
+import Control.Monad.Catch (MonadThrow)
+import Control.Monad.Except (ExceptT, MonadError)
+import Control.Monad.IO.Class (MonadIO(liftIO))
 import Control.Monad.State.Strict (MonadState, StateT)
-import Control.Monad.Trans        (lift)
+import Control.Monad.Trans (lift)
 
 import Data.Solidity.Prim.Address (Address)
 
 import GHC.Generics (Generic)
 
-import Network.Ethereum.Account      (DefaultAccount)
-import Network.Ethereum.Api.Provider (Web3Error (..))
-import Network.Ethereum.Api.Types    (Quantity)
-import Network.JsonRpc.TinyClient    (JsonRpcClient)
+import Network.Ethereum.Account (DefaultAccount)
+import Network.Ethereum.Api.Provider (Web3Error(..))
+import Network.Ethereum.Api.Types (Quantity)
+import Network.JsonRpc.TinyClient (JsonRpcClient)
 
 import Prelude
 
 import Urbit.Ob (Patp)
 
-import qualified Control.Exception                 as Exception
-import qualified Control.Monad.Except              as Except
-import qualified Control.Monad.State.Strict        as State
-import qualified Data.Default.Class                as Default
-import qualified Data.Solidity.Prim                as Solidity.Prim
-import qualified Network.Ethereum.Account          as Ethereum.Account
+import qualified Control.Exception as Exception
+import qualified Control.Monad.Except as Except
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Default.Class as Default
+import qualified Data.Solidity.Prim as Solidity.Prim
+import qualified Network.Ethereum.Account as Ethereum.Account
 import qualified Network.Ethereum.Account.Internal as Ethereum.Account.Internal
-import qualified Network.Ethereum.Api.Eth          as Ethereum.Eth
-import qualified Network.Ethereum.Api.Types        as Ethereum.Types
-import qualified Network.Ethereum.Ens              as Ethereum.Ens
-import qualified Network.JsonRpc.TinyClient        as Web3.Client
+import qualified Network.Ethereum.Api.Eth as Ethereum.Eth
+import qualified Network.Ethereum.Api.Types as Ethereum.Types
+import qualified Network.Ethereum.Ens as Ethereum.Ens
+import qualified Network.JsonRpc.TinyClient as Web3.Client
 import qualified Urbit.Azimuth.Contract
 import qualified Urbit.Ob
 
@@ -115,31 +115,29 @@ getContract = Contract
 getLatestBlock :: Web3 Quantity
 getLatestBlock = Ethereum.Eth.blockNumber
 
-data PointDetails
-    = PointDetails
-        { detailsPoint     :: Patp
-        , detailsPointInfo :: PointInfo
-        , detailsRights    :: Rights
-        }
+data PointDetails = PointDetails
+    { detailsPoint     :: Patp
+    , detailsPointInfo :: PointInfo
+    , detailsRights    :: Rights
+    }
     deriving stock (Show, Eq, Generic)
 
 getPointDetails :: Patp -> Azimuth PointDetails
 getPointDetails ship =
     PointDetails ship <$> getPointInfo ship <*> getRights ship
 
-data PointInfo
-    = PointInfo
-        { infoEncryptionKey      :: Solidity.Prim.BytesN 32
-        , infoAuthenticationKey  :: Solidity.Prim.BytesN 32
-        , infoHasSponsor         :: Bool
-        , infoActive             :: Bool
-        , infoEscapeRequested    :: Bool
-        , infoSponsor            :: Solidity.Prim.UIntN 32
-        , infoEscapeRequestedTo  :: Solidity.Prim.UIntN 32
-        , infoCryptoSuiteVersion :: Solidity.Prim.UIntN 32
-        , infoKeyRevisionNumber  :: Solidity.Prim.UIntN 32
-        , infoContinuityNumber   :: Solidity.Prim.UIntN 32
-        }
+data PointInfo = PointInfo
+    { infoEncryptionKey      :: Solidity.Prim.BytesN 32
+    , infoAuthenticationKey  :: Solidity.Prim.BytesN 32
+    , infoHasSponsor         :: Bool
+    , infoActive             :: Bool
+    , infoEscapeRequested    :: Bool
+    , infoSponsor            :: Solidity.Prim.UIntN 32
+    , infoEscapeRequestedTo  :: Solidity.Prim.UIntN 32
+    , infoCryptoSuiteVersion :: Solidity.Prim.UIntN 32
+    , infoKeyRevisionNumber  :: Solidity.Prim.UIntN 32
+    , infoContinuityNumber   :: Solidity.Prim.UIntN 32
+    }
     deriving stock (Show, Eq, Generic)
 
 getPointInfo :: Patp -> Azimuth PointInfo
@@ -149,20 +147,18 @@ getPointInfo ship = do
 
     pure PointInfo { .. }
 
-data Rights
-    = Rights
-        { rightsOwner           :: Solidity.Prim.Address
-        , rightsManagementProxy :: Maybe Solidity.Prim.Address
-        , rightsSpawnProxy      :: Maybe Solidity.Prim.Address
-        , rightsVotingProxy     :: Maybe Solidity.Prim.Address
-        , rightsTransferProxy   :: Maybe Solidity.Prim.Address
-        }
+data Rights = Rights
+    { rightsOwner           :: Solidity.Prim.Address
+    , rightsManagementProxy :: Maybe Solidity.Prim.Address
+    , rightsSpawnProxy      :: Maybe Solidity.Prim.Address
+    , rightsVotingProxy     :: Maybe Solidity.Prim.Address
+    , rightsTransferProxy   :: Maybe Solidity.Prim.Address
+    }
     deriving stock (Show, Eq, Generic)
 
 getRights :: Patp -> Azimuth Rights
 getRights ship = do
-    let
-        unzero x
+    let unzero x
             | isZeroAddress x = Nothing
             | otherwise       = Just x
 
