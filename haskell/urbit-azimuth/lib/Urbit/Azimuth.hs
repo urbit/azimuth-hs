@@ -1,51 +1,57 @@
 module Urbit.Azimuth
-    ( Web3(..)
+    (
+    -- * Running Azimuth
+      Web3(..)
     , runWeb3
     , Azimuth
     , runAzimuth
+
+    -- * Contract
     , Contract(..)
     , getContract
+
+    -- * Latest Block
     , Quantity
     , getLatestBlock
-    , PointDetails(..)
-    , PointInfo(..)
-    , Rights(..)
-    , getPointDetails
-    , getPointInfo
-    , getRights
+
+    -- * Point
+    , Point(..)
+    , getPoint
     , hasNetworkKeys
-    , canManageNetworkKeys
-    , isParent
-    , canManage
-    , canSpawn
-    , canVote
-    , canTransfer
+
+    -- * Rights
+    , Rights(..)
+    , getRights
     , isOwner
     , isManagementProxy
     , isSpawnProxy
     , isVotingProxy
     , isTransferProxy
+
+    -- * Unify Point and Rights
+    , Details(..)
+    , getDetails
+    , canManageNetworkKeys
+    , canManage
+    , canSpawn
+    , canVote
+    , canTransfer
     )
 where
 
-import Control.Monad.Catch        (MonadThrow)
-import Control.Monad.Except       (ExceptT, MonadError)
-import Control.Monad.IO.Class     (MonadIO (liftIO))
-import Control.Monad.State.Strict (MonadState, StateT)
-import Control.Monad.Trans        (lift)
-
-import Data.Solidity.Prim.Address (Address)
-
-import GHC.Generics (Generic)
-
+import Control.Monad.Catch           (MonadThrow)
+import Control.Monad.Except          (ExceptT, MonadError)
+import Control.Monad.IO.Class        (MonadIO (liftIO))
+import Control.Monad.State.Strict    (MonadState, StateT)
+import Control.Monad.Trans           (lift)
+import Data.Solidity.Prim.Address    (Address)
+import GHC.Generics                  (Generic)
 import Network.Ethereum.Account      (DefaultAccount)
 import Network.Ethereum.Api.Provider (Web3Error (..))
 import Network.Ethereum.Api.Types    (Quantity)
 import Network.JsonRpc.TinyClient    (JsonRpcClient)
-
 import Prelude
-
-import Urbit.Ob (Patp)
+import Urbit.Ob                      (Patp)
 
 import qualified Control.Exception                 as Exception
 import qualified Control.Monad.Except              as Except
@@ -115,37 +121,33 @@ getContract = Contract
 getLatestBlock :: Web3 Quantity
 getLatestBlock = Ethereum.Eth.blockNumber
 
-data PointDetails = PointDetails
-    { detailsPoint     :: Patp
-    , detailsPointInfo :: PointInfo
-    , detailsRights    :: Rights
+-- .points
+
+data Point = Point
+    { pointEncryptionKey      :: Solidity.Prim.BytesN 32
+    , pointAuthenticationKey  :: Solidity.Prim.BytesN 32
+    , pointHasSponsor         :: Bool
+    , pointActive             :: Bool
+    , pointEscapeRequested    :: Bool
+    , pointSponsor            :: Solidity.Prim.UIntN 32
+    , pointEscapeRequestedTo  :: Solidity.Prim.UIntN 32
+    , pointCryptoSuiteVersion :: Solidity.Prim.UIntN 32
+    , pointKeyRevisionNumber  :: Solidity.Prim.UIntN 32
+    , pointContinuityNumber   :: Solidity.Prim.UIntN 32
     }
     deriving stock (Show, Eq, Generic)
 
-getPointDetails :: Patp -> Azimuth PointDetails
-getPointDetails ship =
-    PointDetails ship <$> getPointInfo ship <*> getRights ship
-
-data PointInfo = PointInfo
-    { infoEncryptionKey      :: Solidity.Prim.BytesN 32
-    , infoAuthenticationKey  :: Solidity.Prim.BytesN 32
-    , infoHasSponsor         :: Bool
-    , infoActive             :: Bool
-    , infoEscapeRequested    :: Bool
-    , infoSponsor            :: Solidity.Prim.UIntN 32
-    , infoEscapeRequestedTo  :: Solidity.Prim.UIntN 32
-    , infoCryptoSuiteVersion :: Solidity.Prim.UIntN 32
-    , infoKeyRevisionNumber  :: Solidity.Prim.UIntN 32
-    , infoContinuityNumber   :: Solidity.Prim.UIntN 32
-    }
-    deriving stock (Show, Eq, Generic)
-
-getPointInfo :: Patp -> Azimuth PointInfo
-getPointInfo ship = do
-    (infoEncryptionKey, infoAuthenticationKey, infoHasSponsor, infoActive, infoEscapeRequested, infoSponsor, infoEscapeRequestedTo, infoCryptoSuiteVersion, infoKeyRevisionNumber, infoContinuityNumber) <-
+getPoint :: Patp -> Azimuth Point
+getPoint ship = do
+    (pointEncryptionKey, pointAuthenticationKey, pointHasSponsor, pointActive, pointEscapeRequested, pointSponsor, pointEscapeRequestedTo, pointCryptoSuiteVersion, pointKeyRevisionNumber, pointContinuityNumber) <-
         Urbit.Azimuth.Contract.points (fromIntegral (Urbit.Ob.fromPatp ship))
 
-    pure PointInfo { .. }
+    pure Point { .. }
+
+hasNetworkKeys :: Point -> Bool
+hasNetworkKeys point = pointKeyRevisionNumber point > 0
+
+-- .rights
 
 data Rights = Rights
     { rightsOwner           :: Solidity.Prim.Address
@@ -168,40 +170,6 @@ getRights ship = do
 
     pure Rights { .. }
 
-hasNetworkKeys :: PointInfo -> Bool
-hasNetworkKeys info = infoKeyRevisionNumber info > 0
-
-canManageNetworkKeys :: PointDetails -> Address -> Bool
-canManageNetworkKeys details address =
-    canManage details address && hasNetworkKeys (detailsPointInfo details)
-
-isParent :: Patp -> Bool
-isParent ship = case Urbit.Ob.clan ship of
-    Urbit.Ob.Galaxy -> True
-    Urbit.Ob.Star   -> True
-    _               -> False
-
-canManage :: PointDetails -> Address -> Bool
-canManage PointDetails { detailsRights } address =
-    isOwner detailsRights address || isManagementProxy detailsRights address
-
-canSpawn :: PointDetails -> Address -> Bool
-canSpawn PointDetails { detailsPoint, detailsPointInfo, detailsRights } address
-    = isParent detailsPoint
-        && hasNetworkKeys detailsPointInfo
-        && (isOwner detailsRights address || isSpawnProxy detailsRights address)
-
-canVote :: PointDetails -> Address -> Bool
-canVote PointDetails { detailsPoint, detailsPointInfo, detailsRights } address
-    = (Urbit.Ob.Galaxy == Urbit.Ob.clan detailsPoint)
-        && infoActive detailsPointInfo
-        && (isOwner detailsRights address || isVotingProxy detailsRights address
-           )
-
-canTransfer :: PointDetails -> Address -> Bool
-canTransfer PointDetails { detailsRights } address =
-    isOwner detailsRights address || isTransferProxy detailsRights address
-
 isOwner :: Rights -> Address -> Bool
 isOwner rights = (==) (rightsOwner rights)
 
@@ -217,5 +185,54 @@ isVotingProxy rights = (==) (rightsVotingProxy rights) . Just
 isTransferProxy :: Rights -> Address -> Bool
 isTransferProxy rights = (==) (rightsTransferProxy rights) . Just
 
+-- Unify .points + .rights calls to keep ship+point+rights consistent
+
+data Details = Details
+    { detailsShip   :: Patp
+    , detailsPoint  :: Point
+    , detailsRights :: Rights
+    }
+    deriving stock (Show, Eq, Generic)
+
+getDetails :: Patp -> Azimuth Details
+getDetails ship = Details ship <$> getPoint ship <*> getRights ship
+
+-- The can* series of functions uses Details to provide a consistent interface,
+-- even if it violates the law of Demeter.
+
+canManageNetworkKeys :: Details -> Address -> Bool
+canManageNetworkKeys details@Details { detailsPoint } address =
+    canManage details address && hasNetworkKeys detailsPoint
+
+canManage :: Details -> Address -> Bool
+canManage Details { detailsRights } address =
+    isOwner detailsRights address || isManagementProxy detailsRights address
+
+canSpawn :: Details -> Address -> Bool
+canSpawn Details { detailsShip, detailsPoint, detailsRights } address =
+    isParent detailsShip
+        && hasNetworkKeys detailsPoint
+        && (isOwner detailsRights address || isSpawnProxy detailsRights address)
+
+canVote :: Details -> Address -> Bool
+canVote Details { detailsShip, detailsPoint, detailsRights } address =
+    (Urbit.Ob.Galaxy == Urbit.Ob.clan detailsShip)
+        && pointActive detailsPoint
+        && (isOwner detailsRights address || isVotingProxy detailsRights address
+           )
+
+canTransfer :: Details -> Address -> Bool
+canTransfer Details { detailsRights } address =
+    isOwner detailsRights address || isTransferProxy detailsRights address
+
+-- Utilities
+
 isZeroAddress :: Address -> Bool
 isZeroAddress = (==) Default.def
+
+isParent :: Patp -> Bool
+isParent ship = case Urbit.Ob.clan ship of
+    Urbit.Ob.Galaxy -> True
+    Urbit.Ob.Star   -> True
+    _               -> False
+
