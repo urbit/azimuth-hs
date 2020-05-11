@@ -86,3 +86,5 @@ library
     exposed-modules:
         Urbit.Azimuth
         Urbit.Azimuth.Contract
+
+    other-modules:   Paths_urbit_azimuth
