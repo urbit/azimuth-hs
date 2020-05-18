@@ -8,7 +8,9 @@ license-file:  LICENSE
 author:        Brendan Hay
 maintainer:    maintainer@brendanhay.nz
 copyright:     2020 Brendan Hay
-data-files:    azimuth.json
+data-files:
+    azimuth.json
+    ecliptic.json
 
 source-repository head
     type:     git
@@ -85,6 +87,7 @@ library
 
     exposed-modules:
         Urbit.Azimuth
-        Urbit.Azimuth.Contract
+        Urbit.Azimuth.Azimuth
+        Urbit.Azimuth.Ecliptic
 
     other-modules:   Paths_urbit_azimuth
