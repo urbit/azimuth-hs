@@ -1,25 +1,34 @@
 module Urbit.Azimuth
     (
-    -- * Running Azimuth
+    -- * Running Web3 Actions
       Web3(..)
     , runWeb3
-    , Azimuth
-    , runAzimuth
 
-    -- * Contract
-    , Contract(..)
-    , getContract
-
-    -- * Latest Block
+    -- ** Latest Block
     , Quantity
     , getLatestBlock
 
-    -- * Point
+    -- ** Resolving Contracts
+    , Contracts(..)
+    , getContracts
+
+    -- * Running Azimuth Contracts
+    , Azimuth(..)
+    , runAzimuth
+
+    -- * Additional Type Wrappers
+    , CryptKey(..)
+    , AuthKey(..)
+    , CryptoSuite(..)
+
+    -- * azimuth.eth
+
+    -- ** Point
     , Point(..)
     , getPoint
     , hasNetworkKeys
 
-    -- * Rights
+    -- ** Rights
     , Rights(..)
     , getRights
     , isOwner
@@ -28,7 +37,7 @@ module Urbit.Azimuth
     , isVotingProxy
     , isTransferProxy
 
-    -- * Unify Point and Rights
+    -- ** Unify Point and Rights
     , Details(..)
     , getDetails
     , canManageNetworkKeys
@@ -36,12 +45,17 @@ module Urbit.Azimuth
     , canSpawn
     , canVote
     , canTransfer
+
+    -- * ecliptic.eth
+    , Breach(..)
+    , configureKeys
     )
 where
 
 import Control.Monad.Catch           (MonadThrow)
 import Control.Monad.Except          (ExceptT, MonadError)
 import Control.Monad.IO.Class        (MonadIO (liftIO))
+import Control.Monad.Reader          (ReaderT)
 import Control.Monad.State.Strict    (MonadState, StateT)
 import Control.Monad.Trans           (lift)
 import Data.Solidity.Prim.Address    (Address)
@@ -55,6 +69,7 @@ import Urbit.Ob                      (Patp)
 
 import qualified Control.Exception                 as Exception
 import qualified Control.Monad.Except              as Except
+import qualified Control.Monad.Reader              as Reader
 import qualified Control.Monad.State.Strict        as State
 import qualified Data.Default.Class                as Default
 import qualified Data.Solidity.Prim                as Solidity.Prim
@@ -64,7 +79,8 @@ import qualified Network.Ethereum.Api.Eth          as Ethereum.Eth
 import qualified Network.Ethereum.Api.Types        as Ethereum.Types
 import qualified Network.Ethereum.Ens              as Ethereum.Ens
 import qualified Network.JsonRpc.TinyClient        as Web3.Client
-import qualified Urbit.Azimuth.Contract
+import qualified Urbit.Azimuth.Azimuth             as Azimuth
+import qualified Urbit.Azimuth.Ecliptic            as Ecliptic
 import qualified Urbit.Ob
 
 -- | A wrapper for the 'Ethereum.Provider.Web3' monad that provides a
@@ -92,62 +108,101 @@ runWeb3 client (Web3 action) =
         Left  err -> Exception.throwIO (UserFail err)
         Right ok  -> pure ok
 
+getLatestBlock :: Web3 Quantity
+getLatestBlock = Ethereum.Eth.blockNumber
+
+-- Azimuth: azimuth.eth / 0x223c067f8cf28ae173ee5cafea60ca44c335fecb
+-- Ecliptic: ecliptic.eth / 0x6ac07b7c4601b5ce11de8dfe6335b871c7c4dd4d
+-- Polls: 0x7fecab617c868bb5996d99d95200d2fa708218e4
+-- Linear Star Release: 0x86cd9cd0992f04231751e3761de45cecea5d1801
+-- Conditional Star Release: 0x8c241098c3d3498fe1261421633fd57986d74aea
+-- Claims: 0xe7e7f69b34d7d9bd8d61fb22c33b22708947971a
+-- Censures: 0x325f68d32bdee6ed86e7235ff2480e2a433d6189
+-- Delegated Sending: 0xf6b461fe1ad4bd2ce25b23fe0aff2ac19b3dfa76
+
+data Contracts = Contracts
+    { azimuth  :: Solidity.Prim.Address
+    , ecliptic :: Solidity.Prim.Address
+    }
+
+getContracts :: Web3 Contracts
+getContracts = do
+    let resolve = Ethereum.Account.withAccount () . Ethereum.Ens.resolve
+
+    azimuth  <- resolve "azimuth.eth"
+    ecliptic <- resolve "ecliptic.eth"
+
+    pure Contracts { .. }
+
 -- The functions that use an account are just specialised to 'DefaultAccount'
 -- for now to avoid the batshit constraints of the @web3@ library.
-type Azimuth = DefaultAccount Web3
+newtype Azimuth a = Azimuth (ReaderT (Contracts, Quantity) Web3 a)
+    deriving newtype (Functor, Applicative, Monad)
 
 instance MonadIO Azimuth where
-    liftIO = lift . liftIO
+    liftIO = Azimuth . liftIO
 
-runAzimuth :: Contract -> Quantity -> Azimuth a -> Web3 a
-runAzimuth (Contract address) block action =
-    Ethereum.Account.withAccount () $ Ethereum.Account.withParam
+runAzimuth :: Contracts -> Quantity -> Azimuth a -> Web3 a
+runAzimuth contracts block (Azimuth action) =
+    Reader.runReaderT action (contracts, block)
+
+withContract
+    :: (Contracts -> Solidity.Prim.Address)
+    -> DefaultAccount Web3 a
+    -> Azimuth a
+withContract selector action = Azimuth $ do
+    (contracts, block) <- Reader.ask
+
+    lift $ Ethereum.Account.withAccount () $ Ethereum.Account.withParam
         (\param -> param
-            { Ethereum.Account.Internal._to    = Just address
+            { Ethereum.Account.Internal._to    = Just (selector contracts)
             , Ethereum.Account.Internal._block = Ethereum.Types.BlockWithNumber
                 block
             }
         )
         action
 
--- | The ethereum address of the @azimuth.eth@ contract.
-newtype Contract = Contract Solidity.Prim.Address
+-- Extra type wrappings
+
+newtype CryptKey = CryptKey { fromCryptKey :: Solidity.Prim.BytesN 32 }
     deriving stock (Show, Eq)
 
-getContract :: Web3 Contract
-getContract = Contract
-    <$> Ethereum.Account.withAccount () (Ethereum.Ens.resolve "azimuth.eth")
+newtype AuthKey = AuthKey { fromAuthKey :: Solidity.Prim.BytesN 32 }
+    deriving stock (Show, Eq)
 
-getLatestBlock :: Web3 Quantity
-getLatestBlock = Ethereum.Eth.blockNumber
+newtype CryptoSuite = CryptoSuite { fromCryptoSuite :: Solidity.Prim.UIntN 32 }
+    deriving stock (Show, Eq, Ord)
+    deriving newtype (Num, Real, Enum, Bounded, Integral)
 
--- .points
+-- azimuth.eth
+
+-- azimuth.points
 
 data Point = Point
-    { pointEncryptionKey      :: Solidity.Prim.BytesN 32
-    , pointAuthenticationKey  :: Solidity.Prim.BytesN 32
-    , pointHasSponsor         :: Bool
-    , pointActive             :: Bool
-    , pointEscapeRequested    :: Bool
-    , pointSponsor            :: Solidity.Prim.UIntN 32
-    , pointEscapeRequestedTo  :: Solidity.Prim.UIntN 32
-    , pointCryptoSuiteVersion :: Solidity.Prim.UIntN 32
-    , pointKeyRevisionNumber  :: Solidity.Prim.UIntN 32
-    , pointContinuityNumber   :: Solidity.Prim.UIntN 32
+    { pointCryptKey          :: CryptKey
+    , pointAuthKey           :: AuthKey
+    , pointHasSponsor        :: Bool
+    , pointActive            :: Bool
+    , pointEscapeRequested   :: Bool
+    , pointSponsor           :: Solidity.Prim.UIntN 32
+    , pointEscapeRequestedTo :: Solidity.Prim.UIntN 32
+    , pointCryptoSuite       :: CryptoSuite
+    , pointKeyRevision       :: Solidity.Prim.UIntN 32
+    , pointContinuity        :: Solidity.Prim.UIntN 32
     }
     deriving stock (Show, Eq, Generic)
 
 getPoint :: Patp -> Azimuth Point
-getPoint ship = do
-    (pointEncryptionKey, pointAuthenticationKey, pointHasSponsor, pointActive, pointEscapeRequested, pointSponsor, pointEscapeRequestedTo, pointCryptoSuiteVersion, pointKeyRevisionNumber, pointContinuityNumber) <-
-        Urbit.Azimuth.Contract.points (fromIntegral (Urbit.Ob.fromPatp ship))
+getPoint ship = withContract azimuth $ do
+    (CryptKey -> pointCryptKey, AuthKey -> pointAuthKey, pointHasSponsor, pointActive, pointEscapeRequested, pointSponsor, pointEscapeRequestedTo, CryptoSuite -> pointCryptoSuite, pointKeyRevision, pointContinuity) <-
+        Azimuth.points (shipToPoint ship)
 
     pure Point { .. }
 
 hasNetworkKeys :: Point -> Bool
-hasNetworkKeys point = pointKeyRevisionNumber point > 0
+hasNetworkKeys point = pointKeyRevision point > 0
 
--- .rights
+-- azimuth.rights
 
 data Rights = Rights
     { rightsOwner           :: Solidity.Prim.Address
@@ -159,14 +214,14 @@ data Rights = Rights
     deriving stock (Show, Eq, Generic)
 
 getRights :: Patp -> Azimuth Rights
-getRights ship = do
+getRights ship = withContract azimuth $ do
     let
         unzero x
             | isZeroAddress x = Nothing
             | otherwise       = Just x
 
     (rightsOwner, unzero -> rightsManagementProxy, unzero -> rightsSpawnProxy, unzero -> rightsVotingProxy, unzero -> rightsTransferProxy) <-
-        Urbit.Azimuth.Contract.rights (fromIntegral (Urbit.Ob.fromPatp ship))
+        Azimuth.rights (shipToPoint ship)
 
     pure Rights { .. }
 
@@ -225,7 +280,32 @@ canTransfer :: Details -> Address -> Bool
 canTransfer Details { detailsRights } address =
     isOwner detailsRights address || isTransferProxy detailsRights address
 
+-- ecliptic.eth
+
+data Breach
+    = Discontinuous
+    | Continuous
+    deriving stock (Show, Eq)
+
+configureKeys
+    :: Patp
+    -> CryptKey
+    -> AuthKey
+    -> CryptoSuite
+    -> Breach
+    -> Azimuth Ethereum.Types.TxReceipt
+configureKeys ship crypt auth suite breach =
+    withContract ecliptic $ Ecliptic.configureKeys
+        (shipToPoint ship)
+        (fromCryptKey crypt)
+        (fromAuthKey auth)
+        (fromCryptoSuite suite)
+        (breach == Discontinuous)
+
 -- Utilities
+
+shipToPoint :: Patp -> Solidity.Prim.UIntN 32
+shipToPoint = fromIntegral . Urbit.Ob.fromPatp
 
 isZeroAddress :: Address -> Bool
 isZeroAddress = (==) Default.def
@@ -235,4 +315,3 @@ isParent ship = case Urbit.Ob.clan ship of
     Urbit.Ob.Galaxy -> True
     Urbit.Ob.Star   -> True
     _               -> False
-
