@@ -162,6 +162,15 @@ withContract selector action = Azimuth $ do
         )
         action
 
+-- TODO: Transactions
+
+-- withTransaction
+-- Crypto.Ethereum.Signature.signTransaction
+-- syncDetails
+-- syncRekeyDate
+-- gasLimits
+
+
 -- Extra type wrappings
 
 newtype CryptKey = CryptKey { fromCryptKey :: Solidity.Prim.BytesN 32 }
