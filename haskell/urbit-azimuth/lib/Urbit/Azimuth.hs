@@ -1,7 +1,7 @@
 module Urbit.Azimuth
     (
     -- * Running Web3 Actions
-      Web3Error (..)
+      Web3Error(..)
     , Web3(..)
     , runWeb3
 
