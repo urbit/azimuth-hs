@@ -23,7 +23,7 @@ common base
         -Weverything -Wno-missing-local-signatures
         -Wno-missing-import-lists -Wno-safe -Wno-unsafe
         -Wno-monomorphism-restriction -Wno-missed-specialisations
-        -Wno-all-missed-specialisations -Wno-star-is-type
+        -Wno-all-missed-specialisations
 
     default-extensions:
         NoImplicitPrelude
@@ -65,6 +65,7 @@ common base
         RecordWildCards
         ScopedTypeVariables
         StandaloneDeriving
+        StarIsType
         StrictData
         TupleSections
         TypeApplications
