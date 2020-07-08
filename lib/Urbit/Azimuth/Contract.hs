@@ -12,8 +12,8 @@ module Urbit.Azimuth.Contract (
   , runAzimuth
   ) where
 
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Reader (ReaderT(..), ask)
+import Control.Monad.Trans (lift)
+import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Solidity.Prim.Address (Address)
 import Network.Ethereum.Account (LocalKeyAccount)
 import qualified Network.Ethereum.Account as Ethereum.Account

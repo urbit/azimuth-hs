@@ -27,7 +27,8 @@ library
   hs-source-dirs:  lib
   build-depends:
     , data-default-class
-    , transformers
+    , exceptions
+    , mtl
     , urbit-hob
     , web3
 
@@ -40,6 +41,9 @@ library
     Urbit.Azimuth.Ecliptic.Internal
     Urbit.Azimuth.Point
     Urbit.Azimuth.Transaction
+
+  other-modules:
+    Network.Web3.Provider.Extended
     Urbit.Ob.Extended
 
 Test-suite tests
@@ -53,6 +57,7 @@ Test-suite tests
   build-depends:
     , hspec
     , shelly
+    , text
     , urbit-azimuth
     , urbit-hob
 

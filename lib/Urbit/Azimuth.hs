@@ -1,7 +1,16 @@
 
 module Urbit.Azimuth (
     module E
+
+  , Account(..)
+  , LocalKey(..)
+
+  , blockNumber
   ) where
+
+import Network.Web3.Provider.Extended as E
+import Network.Ethereum.Account (Account(..), LocalKey(..))
+import Network.Ethereum.Api.Eth (blockNumber)
 
 import Urbit.Azimuth.Azimuth as E
 import Urbit.Azimuth.Contract as E
