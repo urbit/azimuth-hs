@@ -20,17 +20,17 @@ source-repository head
 common base
   default-language:   Haskell2010
   build-depends:
-    base >=4.12 && <5
+    base >= 4.12 && < 5
 
 library
   import:          base
   hs-source-dirs:  lib
   build-depends:
-    , data-default-class
+      data-default-class
     , exceptions
     , mtl
     , urbit-hob
-    , web3
+    , web3 == 0.9.1.0
 
   exposed-modules:
     Urbit.Azimuth
@@ -55,7 +55,10 @@ Test-suite tests
   ghc-options:
     -rtsopts
   build-depends:
+      bytestring
+    , haskoin-core == 0.13.4
     , hspec
+    , secp256k1-haskell
     , shelly
     , text
     , urbit-azimuth

@@ -8,6 +8,8 @@ module Urbit.Azimuth (
   , blockNumber
   ) where
 
+import Crypto.Ethereum as E
+
 import Network.Web3.Provider.Extended as E
 import Network.Ethereum.Account (Account(..), LocalKey(..))
 import Network.Ethereum.Api.Eth (blockNumber)
