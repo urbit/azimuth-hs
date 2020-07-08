@@ -1,11 +1,32 @@
-{-# LANGUAGE QuasiQuotes #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-deriving-strategies #-}
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
-{-# OPTIONS_GHC -fno-warn-missing-export-lists #-}
+module Urbit.Azimuth.Ecliptic (
+    RevisionType(..)
 
-module Urbit.Azimuth.Ecliptic where
+  , configureKeys
+  ) where
 
-import qualified Network.Ethereum.Contract.TH as Ethereum.Contract
+import Network.Ethereum.Account (LocalKeyAccount)
+import qualified Network.Ethereum.Api.Types as Api
+import Network.JsonRpc.TinyClient (JsonRpc)
+import Urbit.Azimuth.Contract
+import qualified Urbit.Azimuth.Ecliptic.Internal as I
+import Urbit.Azimuth.Point
+import qualified Urbit.Ob as Ob
+import qualified Urbit.Ob.Extended as Ob
 
-[Ethereum.Contract.abiFrom|ecliptic.json|]
+data RevisionType =
+    Rotate
+  | Breach
+  deriving (Eq, Show)
+
+configureKeys
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> CryptKey
+  -> AuthKey
+  -> CryptoSuite
+  -> RevisionType
+  -> Azimuth (LocalKeyAccount m) Api.TxReceipt
+configureKeys patp (CryptKey ck) (AuthKey ak) (CryptoSuite cs) breach =
+  withContract ecliptic $
+    I.configureKeys (Ob.patpToPoint patp) ck ak cs (breach == Breach)
