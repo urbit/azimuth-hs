@@ -1,5 +1,8 @@
 module Urbit.Azimuth.Account (
-    C.PrivateKey(..)
+    A.Account(..)
+  , A.LocalKey(..)
+
+  , C.PrivateKey(..)
   , C.PublicKey(..)
   , C.importKey
   , C.derivePubKey
@@ -8,6 +11,9 @@ module Urbit.Azimuth.Account (
   , K.DerivPathI(..)
   , K.ParsedPath(..)
   , K.parsePath
+
+  , K.Mnemonic
+  , K.Passphrase
 
   , getLocalKey
   ) where

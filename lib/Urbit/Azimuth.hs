@@ -2,15 +2,12 @@
 module Urbit.Azimuth (
     module E
 
-  , Account(..)
-  , LocalKey(..)
-
   , blockNumber
   ) where
 
-import Network.Web3.Provider.Extended as E
-import Network.Ethereum.Account (Account(..), LocalKey(..))
 import Network.Ethereum.Api.Eth (blockNumber)
+import Network.JsonRpc.TinyClient as E
+import Network.Web3.Provider.Extended as E
 
 import Urbit.Azimuth.Account as E
 import Urbit.Azimuth.Azimuth as E
