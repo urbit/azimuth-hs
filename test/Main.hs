@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
@@ -36,27 +37,22 @@ gkill pod = S.shelly $ S.verbosely $
 withGanache :: IO () -> IO ()
 withGanache action = bracket ginit gkill (const action)
 
-mnem :: A.Mnemonic
-mnem =
-     "benefit crew supreme gesture quantum web media hazard theory mercy wing "
-  <> "kitten"
+data Config = Config {
+    mnem  :: A.Mnemonic
+  , pbase :: A.DerivPath
+  , pk0   :: A.LocalKey
+  , pk1   :: A.LocalKey
+  , pk2   :: A.LocalKey
+  }
 
-pbase :: A.DerivPath
-pbase = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
-
-path0 :: A.DerivPath
-path0 = pbase A.:/ 0
-
-path1 :: A.DerivPath
-path1 = pbase A.:/ 1
-
-path2 :: A.DerivPath
-path2 = pbase A.:/ 2
-
-pk0 :: A.LocalKey
-pk0 = case A.getLocalKey mnem mempty path0 of
-  Right x -> x
-  _       -> error "bang"
+testConfig :: Config
+testConfig = Config {..} where
+  pbase     = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
+  Right pk0 = A.getLocalKey mnem mempty (pbase A.:/ 0)
+  Right pk1 = A.getLocalKey mnem mempty (pbase A.:/ 1)
+  Right pk2 = A.getLocalKey mnem mempty (pbase A.:/ 2)
+  mnem      = "benefit crew supreme gesture quantum web media hazard " <>
+              "theory mercy wing kitten"
 
 simple
   :: (A.JsonRpc m, MonadFail m)
@@ -72,6 +68,8 @@ simple acct patp = do
 main :: IO ()
 main = do
   client <- A.defaultSettings "http://localhost:8545"
+
+  let Config {..} = testConfig
 
   hspec $ around_ withGanache $
     it "does something" $ do
