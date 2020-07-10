@@ -57,10 +57,8 @@ Test-suite tests
   ghc-options:
     -rtsopts
   build-depends:
-      bytestring
-    , haskoin-core == 0.13.4
+      haskoin-core == 0.13.4
     , hspec
-    , secp256k1-haskell
     , shelly
     , text
     , urbit-azimuth
