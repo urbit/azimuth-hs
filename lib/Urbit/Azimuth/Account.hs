@@ -1,6 +1,7 @@
 module Urbit.Azimuth.Account (
     A.Account(..)
   , A.LocalKey(..)
+  , A.LocalKeyAccount(..)
 
   , C.PrivateKey(..)
   , C.PublicKey(..)
@@ -29,7 +30,7 @@ getLocalKey
   -> Either String A.LocalKey
 getLocalKey mnem pass path = do
   seed <- K.mnemonicToSeed pass mnem
-  pure . flip A.LocalKey 0 -- NB does chainId matter here?
+  pure . flip A.LocalKey 1 -- FIXME this targets mainnet only!
     . C.importKey
     . K.getSecKey
     . K.xPrvKey
