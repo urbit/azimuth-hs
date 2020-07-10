@@ -34,28 +34,35 @@ gkill pod = S.shelly $ S.verbosely $
     , pod
     ]
 
+-- FIXME need to add a contract deployment action here
 withGanache :: IO () -> IO ()
 withGanache action = bracket ginit gkill (const action)
 
 data Config = Config {
-    endpt  :: String
-  , mnem   :: A.Mnemonic
-  , pbase  :: A.DerivPath
-  , pk0    :: A.LocalKey
-  , pk1    :: A.LocalKey
-  , pk2    :: A.LocalKey
+    endpt        :: String
+  , mnem         :: A.Mnemonic
+  , pbase        :: A.DerivPath
+  , pk0          :: A.LocalKey
+  , pk1          :: A.LocalKey
+  , pk2          :: A.LocalKey
+  , contracts    :: A.Contracts
   }
 
 testConfig :: Config
 testConfig = Config {..} where
-  endpt     = "http://localhost:8545"
-  pbase     = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
-  Right pk0 = A.getLocalKey mnem mempty (pbase A.:/ 0)
-  Right pk1 = A.getLocalKey mnem mempty (pbase A.:/ 1)
-  Right pk2 = A.getLocalKey mnem mempty (pbase A.:/ 2)
-  mnem      = "benefit crew supreme gesture quantum web media hazard " <>
-              "theory mercy wing kitten"
+  endpt        = "http://localhost:8545"
+  pbase        = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
+  Right pk0    = A.getLocalKey mnem mempty (pbase A.:/ 0)
+  Right pk1    = A.getLocalKey mnem mempty (pbase A.:/ 1)
+  Right pk2    = A.getLocalKey mnem mempty (pbase A.:/ 2)
 
+  mnem         = "benefit crew supreme gesture quantum web media hazard " <>
+                 "theory mercy wing kitten"
+
+  contracts    = A.Contracts {
+      azimuth  = "0x863d9c2e5c4c133596cfac29d55255f0d0f86381"
+    , ecliptic = "0x56db68f29203ff44a803faa2404a44ecbb7a7480"
+    }
 
 rotate
   :: (A.JsonRpc m, MonadFail m)
@@ -66,21 +73,25 @@ rotate patp = do
   let keys = A.keyInformation point
   A.configureKeys patp keys A.Rotate
 
+
 main :: IO ()
 main = do
-  let Config {..} = infuraConfig
+  let Config {..} = testConfig
+      zod         = Ob.patp 0
+      nec         = Ob.patp 1
+      bud         = Ob.patp 2
+      wes         = Ob.patp 3
       nidsut      = Ob.patp 15663360
 
   client <- A.defaultSettings endpt
 
-  hspec $
-    it "rotates keys properly" $ do
-      result <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $ do
-          contracts <- A.getContracts
-          A.runAzimuth contracts block $ do
-            point <- A.getPoint nidsut
-            rotate nidsut
+  hspec $ it "creates galaxies properly" $ do
+    result <- A.runWeb3 client $ do
+      block <- A.blockNumber
+      A.withAccount pk0 $
+        A.runAzimuth contracts block $ do
+          A.getPoint bud
+          -- A.createGalaxy bud "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
+          -- A.createGalaxy wes "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      print result
+    print result
