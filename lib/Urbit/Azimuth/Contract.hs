@@ -27,16 +27,15 @@ data Contracts = Contracts {
   , ecliptic :: Address
   } deriving Show
 
-newtype Azimuth m a = Azimuth (ReaderT (Contracts, Quantity) m a)
+newtype Azimuth m a =
+    Azimuth (ReaderT (Contracts, Quantity) (LocalKeyAccount m) a)
   deriving newtype (Functor, Applicative, Monad)
 
-runAzimuth :: Contracts -> Quantity -> Azimuth m a -> m a
+runAzimuth :: Contracts -> Quantity -> Azimuth m a -> LocalKeyAccount m a
 runAzimuth contracts block (Azimuth action) =
   runReaderT action (contracts, block)
 
-getContracts
-  :: (JsonRpc m, MonadFail m)
-  => LocalKeyAccount m Contracts
+getContracts :: (JsonRpc m, MonadFail m) => LocalKeyAccount m Contracts
 getContracts = do
   azimuth  <- Ethereum.Ens.resolve "azimuth.eth"
   ecliptic <- Ethereum.Ens.resolve "ecliptic.eth"
@@ -46,7 +45,7 @@ withContract
   :: Monad m
   => (Contracts -> Address)
   -> LocalKeyAccount m a
-  -> Azimuth (LocalKeyAccount m) a
+  -> Azimuth m a
 withContract selector action = Azimuth $ do
   (contracts, block) <- ask
   lift $ Ethereum.Account.withParam (\param -> param {

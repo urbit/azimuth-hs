@@ -19,20 +19,14 @@ import qualified Urbit.Ob as Ob
 import qualified Urbit.Ob.Extended as Ob
 
 -- | Fetch a point's details and rights.
-getPoint
-  :: (JsonRpc m, MonadFail m)
-  => Ob.Patp
-  -> Azimuth (LocalKeyAccount m) Point
+getPoint :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m Point
 getPoint patp = do
   deets  <- getDetails patp
   rights <- getRights patp
   pure (Point patp deets rights)
 
 -- | Fetch a point's details.
-getDetails
-  :: (JsonRpc m, MonadFail m)
-  => Ob.Patp
-  -> Azimuth (LocalKeyAccount m) Details
+getDetails :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m Details
 getDetails patp = withContract azimuth $ do
   let point = Ob.patpToPoint patp
 
@@ -50,10 +44,7 @@ getDetails patp = withContract azimuth $ do
   pure Details { .. }
 
 -- | Fetch a point's rights.
-getRights
-  :: (JsonRpc m, MonadFail m)
-  => Ob.Patp
-  -> Azimuth (LocalKeyAccount m) Rights
+getRights :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m Rights
 getRights patp = withContract azimuth $ do
   let unzero x = if isZeroAddress x then Nothing else Just x
       point    = Ob.patpToPoint patp

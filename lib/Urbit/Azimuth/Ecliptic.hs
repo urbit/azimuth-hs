@@ -25,7 +25,7 @@ configureKeys
   => Ob.Patp
   -> Keys
   -> RevisionType
-  -> Azimuth (LocalKeyAccount m) Api.TxReceipt
+  -> Azimuth m Api.TxReceipt
 configureKeys patp Keys {..} breach = do
   let point = Ob.patpToPoint patp
       ck    = fromCryptKey keyCrypt
