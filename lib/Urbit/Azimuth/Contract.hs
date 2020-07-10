@@ -51,5 +51,8 @@ withContract selector action = Azimuth $ do
   lift $ Ethereum.Account.withParam (\param -> param {
     AI._to    = Just (selector contracts)
   , AI._block = BlockWithNumber block
+  -- NB hardcoded to 40 gwei at present
+  -- going to want a better way to specify gas price
+  , AI._gasPrice = Just 40000000000
   }) action
 
