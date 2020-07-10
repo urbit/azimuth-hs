@@ -104,16 +104,16 @@ main = do
           A.runAzimuth contracts block $
             A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      active <- A.runWeb3 client $ do
+      (zp, np) <- A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
           A.runAzimuth contracts block $ do
             zp <- A.getPoint zod
             np <- A.getPoint nec
-            pure $ A.detailsActive (A.pointDetails zp)
-                && A.detailsActive (A.pointDetails np)
+            pure (zp, np)
 
-      active `shouldBe` True
+      A.pointDetails zp `shouldSatisfy` A.detailsActive
+      A.pointDetails np `shouldSatisfy` A.detailsActive
 
     it "rotates keys properly" $ do
       A.runWeb3 client $ do
