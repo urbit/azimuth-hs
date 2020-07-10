@@ -63,4 +63,5 @@ Test-suite tests
     , text
     , urbit-azimuth
     , urbit-hob
+    , web3 == 0.9.1.0
 

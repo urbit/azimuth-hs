@@ -38,15 +38,17 @@ withGanache :: IO () -> IO ()
 withGanache action = bracket ginit gkill (const action)
 
 data Config = Config {
-    mnem  :: A.Mnemonic
-  , pbase :: A.DerivPath
-  , pk0   :: A.LocalKey
-  , pk1   :: A.LocalKey
-  , pk2   :: A.LocalKey
+    endpt  :: String
+  , mnem   :: A.Mnemonic
+  , pbase  :: A.DerivPath
+  , pk0    :: A.LocalKey
+  , pk1    :: A.LocalKey
+  , pk2    :: A.LocalKey
   }
 
 testConfig :: Config
 testConfig = Config {..} where
+  endpt     = "http://localhost:8545"
   pbase     = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
   Right pk0 = A.getLocalKey mnem mempty (pbase A.:/ 0)
   Right pk1 = A.getLocalKey mnem mempty (pbase A.:/ 1)
@@ -54,27 +56,31 @@ testConfig = Config {..} where
   mnem      = "benefit crew supreme gesture quantum web media hazard " <>
               "theory mercy wing kitten"
 
-simple
+
+rotate
   :: (A.JsonRpc m, MonadFail m)
-  => A.LocalKey
-  -> Ob.Patp
-  -> m A.Point
-simple acct patp = do
-  block <- A.blockNumber
-  A.withAccount acct $ do
-    contracts <- A.getContracts
-    A.runAzimuth contracts block (A.getPoint patp)
+  => Ob.Patp
+  -> A.Azimuth m A.TxReceipt
+rotate patp = do
+  point <- A.getPoint patp
+  let keys = A.keyInformation point
+  A.configureKeys patp keys A.Rotate
 
 main :: IO ()
 main = do
-  client <- A.defaultSettings "http://localhost:8545"
+  let Config {..} = infuraConfig
+      nidsut      = Ob.patp 15663360
 
-  let Config {..} = testConfig
+  client <- A.defaultSettings endpt
 
-  hspec $ around_ withGanache $
-    it "does something" $ do
-      point <- A.runWeb3 client $ do
+  hspec $
+    it "rotates keys properly" $ do
+      result <- A.runWeb3 client $ do
         block <- A.blockNumber
-        simple pk0 (Ob.patp 0)
+        A.withAccount pk0 $ do
+          contracts <- A.getContracts
+          A.runAzimuth contracts block $ do
+            point <- A.getPoint nidsut
+            rotate nidsut
 
-      print point
+      print result
