@@ -10,8 +10,8 @@ import qualified Urbit.Azimuth as A
 import qualified Urbit.Ob as Ob
 
 ginit :: IO T.Text
-ginit = S.shelly $ S.verbosely $
-  S.run "docker" [
+ginit = S.shelly $ S.verbosely $ do
+  pod <- S.run "docker" [
       "run"
     , "-d"
     , "-p", "8545:8545"
@@ -20,6 +20,11 @@ ginit = S.shelly $ S.verbosely $
     , "-m", "'benefit crew supreme gesture quantum web media hazard " <>
             "theory mercy wing kitten'"
     ]
+
+  -- give it a sec to get going
+  _ <- S.run_ "sleep" [ "5" ]
+
+  pure (T.takeWhile (/= '\n') pod)
 
 gkill :: T.Text -> IO ()
 gkill pod = S.shelly $ S.verbosely $
@@ -52,7 +57,6 @@ pk0 :: A.LocalKey
 pk0 = case A.getLocalKey mnem mempty path0 of
   Right x -> x
   _       -> error "bang"
-
 
 simple
   :: (A.JsonRpc m, MonadFail m)
