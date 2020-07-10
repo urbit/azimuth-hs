@@ -101,8 +101,6 @@ data Keys = Keys {
     keyCrypt       :: CryptKey
   , keyAuth        :: AuthKey
   , keyCryptoSuite :: CryptoSuite
-  , keyLife        :: Life
-  , keyRift        :: Rift
   } deriving stock (Show, Eq)
 
 -- | Check if an address is the owner of a point.
@@ -166,8 +164,6 @@ keyInformation Point {..} = Keys {
       keyCrypt       = detailsCryptKey
     , keyAuth        = detailsAuthKey
     , keyCryptoSuite = detailsCryptoSuite
-    , keyLife        = detailsLife
-    , keyRift        = detailsRift
     }
   where
     Details {..} = pointDetails
