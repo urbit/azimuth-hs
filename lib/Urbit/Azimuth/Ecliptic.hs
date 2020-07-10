@@ -4,6 +4,7 @@ module Urbit.Azimuth.Ecliptic (
     RevisionType(..)
 
   , configureKeys
+  , createGalaxy
   ) where
 
 import Network.Ethereum.Account (LocalKeyAccount)
@@ -34,3 +35,13 @@ configureKeys patp Keys {..} breach = do
       bc    = breach == Breach
 
   withContract ecliptic $ I.configureKeys point ck ak cs bc
+
+createGalaxy
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+createGalaxy patp addr = do
+  let Right point = Ob.patpToGalaxy patp -- FIXME no error handling
+  withContract ecliptic $
+    I.createGalaxy point addr

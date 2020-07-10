@@ -16,6 +16,8 @@ module Urbit.Azimuth.Point (
   , Life(..)
   , Rift(..)
 
+  , Address(..)
+
   , isOwner
   , isLive
   , isSponsor
