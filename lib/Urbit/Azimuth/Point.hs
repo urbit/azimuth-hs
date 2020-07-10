@@ -13,8 +13,8 @@ module Urbit.Azimuth.Point (
   , CryptKey(..)
   , AuthKey(..)
   , CryptoSuite(..)
-  , KeyRevision(..)
-  , KeyContinuity(..)
+  , Life(..)
+  , Rift(..)
 
   , isOwner
   , isLive
@@ -51,8 +51,8 @@ data Details = Details {
   , detailsSponsor           :: Patp
   , detailsEscapeRequestedTo :: Patp
   , detailsCryptoSuite       :: CryptoSuite
-  , detailsKeyRevision       :: KeyRevision
-  , detailsContinuity        :: KeyContinuity
+  , detailsLife              :: Life
+  , detailsRift              :: Rift
   }
   deriving stock (Show, Eq, Generic)
 
@@ -83,14 +83,14 @@ newtype CryptoSuite = CryptoSuite {
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
 
-newtype KeyRevision = KeyRevision {
-    fromKeyRevision :: Solidity.Prim.UIntN 32
+newtype Life = Life {
+    fromLife :: Solidity.Prim.UIntN 32
   }
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
 
-newtype KeyContinuity = KeyContinuity {
-    fromKeyContinuity :: Solidity.Prim.UIntN 32
+newtype Rift = Rift {
+    fromRift :: Solidity.Prim.UIntN 32
   }
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
@@ -99,8 +99,8 @@ data Keys = Keys {
     keyCrypt       :: CryptKey
   , keyAuth        :: AuthKey
   , keyCryptoSuite :: CryptoSuite
-  , keyRevision    :: KeyRevision
-  , keyContinuity  :: KeyContinuity
+  , keyLife        :: Life
+  , keyRift        :: Rift
   } deriving stock (Show, Eq)
 
 -- | Check if an address is the owner of a point.
@@ -109,7 +109,7 @@ isOwner Point {..} addr = rightsOwner pointRights == addr
 
 -- | Check if a point has been booted.
 hasBeenLinked :: Point -> Bool
-hasBeenLinked = (> 0) . detailsKeyRevision . pointDetails
+hasBeenLinked = (> 0) . detailsLife . pointDetails
 
 -- | Check if a point is live.
 isLive :: Point -> Bool
@@ -164,8 +164,8 @@ keyInformation Point {..} = Keys {
       keyCrypt       = detailsCryptKey
     , keyAuth        = detailsAuthKey
     , keyCryptoSuite = detailsCryptoSuite
-    , keyRevision    = detailsKeyRevision
-    , keyContinuity  = detailsContinuity
+    , keyLife        = detailsLife
+    , keyRift        = detailsRift
     }
   where
     Details {..} = pointDetails

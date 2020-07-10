@@ -25,7 +25,7 @@ import Network.JsonRpc.TinyClient (JsonRpc)
 data Contracts = Contracts {
     azimuth  :: Address
   , ecliptic :: Address
-  }
+  } deriving Show
 
 newtype Azimuth m a = Azimuth (ReaderT (Contracts, Quantity) m a)
   deriving newtype (Functor, Applicative, Monad)

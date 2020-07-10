@@ -44,8 +44,8 @@ getDetails patp = withContract azimuth $ do
     Ob.pointToPatp -> detailsSponsor,
     Ob.pointToPatp -> detailsEscapeRequestedTo,
     CryptoSuite -> detailsCryptoSuite,
-    KeyRevision -> detailsKeyRevision,
-    KeyContinuity -> detailsContinuity ) <- I.points point
+    Life -> detailsLife,
+    Rift -> detailsRift ) <- I.points point
 
   pure Details { .. }
 

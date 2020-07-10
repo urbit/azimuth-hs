@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 
 module Urbit.Azimuth.Ecliptic (
     RevisionType(..)
@@ -22,11 +23,14 @@ data RevisionType =
 configureKeys
   :: (JsonRpc m, MonadFail m)
   => Ob.Patp
-  -> CryptKey
-  -> AuthKey
-  -> CryptoSuite
+  -> Keys
   -> RevisionType
   -> Azimuth (LocalKeyAccount m) Api.TxReceipt
-configureKeys patp (CryptKey ck) (AuthKey ak) (CryptoSuite cs) breach =
-  withContract ecliptic $
-    I.configureKeys (Ob.patpToPoint patp) ck ak cs (breach == Breach)
+configureKeys patp Keys {..} breach = do
+  let point = Ob.patpToPoint patp
+      ck    = fromCryptKey keyCrypt
+      ak    = fromAuthKey keyAuth
+      cs    = fromCryptoSuite keyCryptoSuite
+      bc    = breach == Breach
+
+  withContract ecliptic $ I.configureKeys point ck ak cs bc
