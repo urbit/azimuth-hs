@@ -28,15 +28,17 @@ library
   build-depends:
       data-default-class
     , exceptions
+    , haskoin-core == 0.13.4
     , mtl
     , urbit-hob
     , web3 == 0.9.1.0
 
   exposed-modules:
     Urbit.Azimuth
-    Urbit.Azimuth.Contract
+    Urbit.Azimuth.Account
     Urbit.Azimuth.Azimuth
     Urbit.Azimuth.Azimuth.Internal
+    Urbit.Azimuth.Contract
     Urbit.Azimuth.Ecliptic
     Urbit.Azimuth.Ecliptic.Internal
     Urbit.Azimuth.Point

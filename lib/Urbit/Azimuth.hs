@@ -8,12 +8,11 @@ module Urbit.Azimuth (
   , blockNumber
   ) where
 
-import Crypto.Ethereum as E
-
 import Network.Web3.Provider.Extended as E
 import Network.Ethereum.Account (Account(..), LocalKey(..))
 import Network.Ethereum.Api.Eth (blockNumber)
 
+import Urbit.Azimuth.Account as E
 import Urbit.Azimuth.Azimuth as E
 import Urbit.Azimuth.Contract as E
 import Urbit.Azimuth.Ecliptic as E
