@@ -119,12 +119,12 @@ main = do
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ rotate zod keys
+          A.runAzimuth contracts block $ A.configureKeys zod keys A.Rotate
 
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ rotate nec keys
+          A.runAzimuth contracts block $ A.configureKeys nec keys A.Rotate
 
       (kz, kn) <- A.runWeb3 client $ do
         block <- A.blockNumber
@@ -138,4 +138,36 @@ main = do
       A.keyAuth kz `shouldBe` (A.AuthKey bytes)
       A.keyCrypt kn `shouldBe` (A.CryptKey bytes)
       A.keyAuth kn `shouldBe` (A.AuthKey bytes)
+
+    it "breaches continuity properly" $ do
+      (z0, n0) <- A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ do
+            zp <- A.getPoint zod
+            np <- A.getPoint nec
+            pure (zp, np)
+
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ A.configureKeys zod keys A.Breach
+
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ A.configureKeys nec keys A.Breach
+
+      (z1, n1) <- A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ do
+            zp <- A.getPoint zod
+            np <- A.getPoint nec
+            pure (zp, np)
+
+      let getRift = A.detailsRift . A.pointDetails
+
+      getRift z1 `shouldSatisfy` (> (getRift z0))
+      getRift n1 `shouldSatisfy` (> (getRift n0))
 
