@@ -67,12 +67,9 @@ testConfig = Config {..} where
 rotate
   :: (A.JsonRpc m, MonadFail m)
   => Ob.Patp
+  -> A.Keys
   -> A.Azimuth m A.TxReceipt
-rotate patp = do
-  point <- A.getPoint patp
-  let keys = A.keyInformation point
-  A.configureKeys patp keys A.Rotate
-
+rotate patp keys = A.configureKeys patp keys A.Rotate
 
 main :: IO ()
 main = do
@@ -83,15 +80,62 @@ main = do
       wes         = Ob.patp 3
       nidsut      = Ob.patp 15663360
 
+      bytes = "0x7768617465766572000000000000000000000000000000000000000000000000"
+
+      keys  = A.Keys {
+          keyCrypt       = A.CryptKey bytes
+        , keyAuth        = A.AuthKey bytes
+        , keyCryptoSuite = A.CryptoSuite 1
+        }
+
   client <- A.defaultSettings endpt
 
-  hspec $ it "creates galaxies properly" $ do
-    result <- A.runWeb3 client $ do
-      block <- A.blockNumber
-      A.withAccount pk0 $
-        A.runAzimuth contracts block $ do
-          A.getPoint bud
-          -- A.createGalaxy bud "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
-          -- A.createGalaxy wes "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
+  hspec $ do
+    it "creates galaxies properly" $ do
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $
+            A.createGalaxy zod "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-    print result
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $
+            A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
+
+      active <- A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ do
+            zp <- A.getPoint zod
+            np <- A.getPoint nec
+            pure $ A.detailsActive (A.pointDetails zp)
+                && A.detailsActive (A.pointDetails np)
+
+      active `shouldBe` True
+
+    it "rotates keys properly" $ do
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ rotate zod keys
+
+      A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ rotate nec keys
+
+      (kz, kn) <- A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ do
+            zp <- A.getPoint zod
+            np <- A.getPoint nec
+            pure (A.keyInformation zp, A.keyInformation np)
+
+      A.keyCrypt kz `shouldBe` (A.CryptKey bytes)
+      A.keyAuth kz `shouldBe` (A.AuthKey bytes)
+      A.keyCrypt kn `shouldBe` (A.CryptKey bytes)
+      A.keyAuth kn `shouldBe` (A.AuthKey bytes)
+
