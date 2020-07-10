@@ -2,10 +2,13 @@
 module Urbit.Azimuth (
     module E
 
+  , Quantity
+  , DefaultBlock(..)
   , blockNumber
   ) where
 
 import Network.Ethereum.Api.Eth (blockNumber)
+import Network.Ethereum.Api.Types (DefaultBlock(..), Quantity)
 import Network.JsonRpc.TinyClient as E
 import Network.Web3.Provider.Extended as E
 
