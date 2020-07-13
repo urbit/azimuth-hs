@@ -6,13 +6,28 @@ module Urbit.Azimuth.Azimuth (
     getPoint
   , getDetails
   , getRights
+  , getSpawnCount
+  , getSpawned
+  , getSponsoringCount
+  , getSponsoring
+  , getOwnedPointCount
+  , getOwnedPoints
+  , getManagerForCount
+  , getManagerFor
+  , getVotingForCount
+  , getVotingFor
+  , getSpawningForCount
+  , getSpawningFor
+  , getTransferringForCount
+  , getTransferringFor
   ) where
 
 import qualified Data.Default.Class as Default
 import Data.Solidity.Prim.Address (Address)
 import Network.Ethereum.Account (LocalKeyAccount)
 import Network.JsonRpc.TinyClient (JsonRpc)
-import Urbit.Azimuth.Azimuth.Internal as I
+import Numeric.Natural
+import qualified Urbit.Azimuth.Azimuth.Internal as I
 import Urbit.Azimuth.Contract
 import Urbit.Azimuth.Point
 import qualified Urbit.Ob as Ob
@@ -56,6 +71,117 @@ getRights patp = withContract azimuth $ do
     unzero -> rightsTransferProxy ) <- I.rights point
 
   pure Rights { .. }
+
+-- | Get the number of points a point has spawned.
+getSpawnCount :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m Natural
+getSpawnCount patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  count <- I.getSpawnCount point
+  pure $ fromIntegral count
+
+-- | Get a list of points that a point has spawned.
+getSpawned :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m [Ob.Patp]
+getSpawned patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  children <- I.getSpawned point
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get a list of points that a point is sponsoring.
+getSponsoring :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m [Ob.Patp]
+getSponsoring patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  children <- I.getSponsoring point
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points a point is sponsoring.
+getSponsoringCount :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m Natural
+getSponsoringCount patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  count <- I.getSponsoringCount point
+  pure $ fromIntegral count
+
+-- | Get a list of points that are requesting escape from a point.
+getEscapeRequests :: (JsonRpc m, MonadFail m) => Ob.Patp -> Azimuth m [Ob.Patp]
+getEscapeRequests patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  children <- I.getEscapeRequests point
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that are requesting escape from a point.
+getEscapeRequestsCount
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Azimuth m Natural
+getEscapeRequestsCount patp = withContract azimuth $ do
+  let point = Ob.patpToPoint patp
+  count <- I.getEscapeRequestsCount point
+  pure $ fromIntegral count
+
+-- | Get a list of points that an address owns.
+getOwnedPoints :: (JsonRpc m, MonadFail m) => Address -> Azimuth m [Ob.Patp]
+getOwnedPoints addr = withContract azimuth $ do
+  children <- I.getOwnedPoints addr
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that an address owns.
+getOwnedPointCount :: (JsonRpc m, MonadFail m) => Address -> Azimuth m Natural
+getOwnedPointCount addr = withContract azimuth $ do
+  count <- I.getOwnedPointCount addr
+  pure $ fromIntegral count
+
+-- | Get a list of points that an address manages.
+getManagerFor :: (JsonRpc m, MonadFail m) => Address -> Azimuth m [Ob.Patp]
+getManagerFor addr = withContract azimuth $ do
+  children <- I.getManagerFor addr
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that an address manages.
+getManagerForCount :: (JsonRpc m, MonadFail m) => Address -> Azimuth m Natural
+getManagerForCount addr = withContract azimuth $ do
+  count <- I.getManagerForCount addr
+  pure $ fromIntegral count
+
+-- | Get a list of points that an address can vote on behalf of.
+getVotingFor :: (JsonRpc m, MonadFail m) => Address -> Azimuth m [Ob.Patp]
+getVotingFor addr = withContract azimuth $ do
+  children <- I.getVotingFor addr
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that an address can vote on behalf of.
+getVotingForCount :: (JsonRpc m, MonadFail m) => Address -> Azimuth m Natural
+getVotingForCount addr = withContract azimuth $ do
+  count <- I.getVotingForCount addr
+  pure $ fromIntegral count
+
+-- | Get a list of points that an address is a spawn proxy for.
+getSpawningFor :: (JsonRpc m, MonadFail m) => Address -> Azimuth m [Ob.Patp]
+getSpawningFor addr = withContract azimuth $ do
+  children <- I.getSpawningFor addr
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that an address is a spawn proxy for.
+getSpawningForCount :: (JsonRpc m, MonadFail m) => Address -> Azimuth m Natural
+getSpawningForCount addr = withContract azimuth $ do
+  count <- I.getSpawningForCount addr
+  pure $ fromIntegral count
+
+-- | Get a list of points that an address is a transfer proxy for.
+getTransferringFor
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Azimuth m [Ob.Patp]
+getTransferringFor addr = withContract azimuth $ do
+  children <- I.getTransferringFor addr
+  pure $ fmap Ob.pointToPatp children
+
+-- | Get the number of points that an address is a transfer proxy for.
+getTransferringForCount
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Azimuth m Natural
+getTransferringForCount addr = withContract azimuth $ do
+  count <- I.getTransferringForCount addr
+  pure $ fromIntegral count
 
 isZeroAddress :: Address -> Bool
 isZeroAddress addr = addr == Default.def
