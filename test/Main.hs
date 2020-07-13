@@ -64,13 +64,6 @@ testConfig = Config {..} where
     , ecliptic = "0x56db68f29203ff44a803faa2404a44ecbb7a7480"
     }
 
-rotate
-  :: (A.JsonRpc m, MonadFail m)
-  => Ob.Patp
-  -> A.Keys
-  -> A.Azimuth m A.TxReceipt
-rotate patp keys = A.configureKeys patp keys A.Rotate
-
 main :: IO ()
 main = do
   let Config {..} = testConfig
@@ -90,8 +83,27 @@ main = do
 
   client <- A.defaultSettings endpt
 
+  -- NB eventually this should use the 'around_ withGanache' context, but a
+  --    contract deployment action will need to be added first.
+  --
+  --    until then, you should run these tests by booting a ganache node in
+  --    the background and deploying the contracts with truffle.  you may
+  --    want to use the 'test:setup' and 'test:cleanup' npm actions in
+  --    azimuth-js.
+
   hspec $ do
     it "creates galaxies properly" $ do
+      (z0, n0) <- A.runWeb3 client $ do
+        block <- A.blockNumber
+        A.withAccount pk0 $
+          A.runAzimuth contracts block $ do
+            zp <- A.getPoint zod
+            np <- A.getPoint nec
+            pure (zp, np)
+
+      A.pointDetails z0 `shouldNotSatisfy` A.detailsActive
+      A.pointDetails n0 `shouldNotSatisfy` A.detailsActive
+
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
@@ -104,7 +116,7 @@ main = do
           A.runAzimuth contracts block $
             A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      (zp, np) <- A.runWeb3 client $ do
+      (z1, n1) <- A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
           A.runAzimuth contracts block $ do
@@ -112,19 +124,21 @@ main = do
             np <- A.getPoint nec
             pure (zp, np)
 
-      A.pointDetails zp `shouldSatisfy` A.detailsActive
-      A.pointDetails np `shouldSatisfy` A.detailsActive
+      A.pointDetails z1 `shouldSatisfy` A.detailsActive
+      A.pointDetails n1 `shouldSatisfy` A.detailsActive
 
     it "rotates keys properly" $ do
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ A.configureKeys zod keys A.Rotate
+          A.runAzimuth contracts block $
+            A.configureKeys zod keys A.Rotate
 
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ A.configureKeys nec keys A.Rotate
+          A.runAzimuth contracts block $
+            A.configureKeys nec keys A.Rotate
 
       (kz, kn) <- A.runWeb3 client $ do
         block <- A.blockNumber
@@ -151,12 +165,14 @@ main = do
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ A.configureKeys zod keys A.Breach
+          A.runAzimuth contracts block $
+            A.configureKeys zod keys A.Breach
 
       A.runWeb3 client $ do
         block <- A.blockNumber
         A.withAccount pk0 $
-          A.runAzimuth contracts block $ A.configureKeys nec keys A.Breach
+          A.runAzimuth contracts block $
+            A.configureKeys nec keys A.Breach
 
       (z1, n1) <- A.runWeb3 client $ do
         block <- A.blockNumber
