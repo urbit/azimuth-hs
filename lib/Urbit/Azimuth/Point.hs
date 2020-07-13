@@ -31,6 +31,7 @@ module Urbit.Azimuth.Point (
   , keyInformation
   ) where
 
+import qualified Data.ByteArray.Sized as DBS
 import Data.Solidity.Prim.Address (Address)
 import qualified Data.Solidity.Prim as Solidity.Prim (UIntN, BytesN)
 import GHC.Generics (Generic)
@@ -114,9 +115,9 @@ hasBeenLinked = (> 0) . detailsLife . pointDetails
 -- | Check if a point is live.
 isLive :: Point -> Bool
 isLive Point {..} =
-       detailsCryptKey /= mempty
-    && detailsAuthKey /= mempty
-    && detailsCryptoSuite /= 0
+       fromCryptKey detailsCryptKey /= DBS.zero
+    && fromAuthKey detailsAuthKey /= DBS.zero
+    && fromCryptoSuite detailsCryptoSuite /= 0
   where
     Details {..} = pointDetails
 

@@ -29,6 +29,7 @@ library
       data-default-class
     , exceptions
     , haskoin-core == 0.13.4
+    , memory
     , mtl
     , urbit-hob
     , web3 == 0.9.1.0
