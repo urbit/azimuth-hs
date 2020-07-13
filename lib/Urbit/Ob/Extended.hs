@@ -2,6 +2,7 @@
 
 module Urbit.Ob.Extended (
     patpToPoint
+  , patpToSolidity256
   , patpToGalaxy
   , pointToPatp
   ) where
@@ -17,6 +18,10 @@ data ObError = InvalidClass Ob.Class
 --   conversion to a 32-bit Azimuth point!
 patpToPoint :: Ob.Patp -> Data.Solidity.Prim.UIntN 32
 patpToPoint = fromIntegral . Ob.fromPatp
+
+-- | Convert a @p value to a 256-bit integer.
+patpToSolidity256 :: Ob.Patp -> Data.Solidity.Prim.UIntN 256
+patpToSolidity256 = fromIntegral . Ob.fromPatp
 
 -- | Convert a galaxy-class @p value to an Azimuth point.
 patpToGalaxy :: Ob.Patp -> Either ObError (Data.Solidity.Prim.UIntN 8)
