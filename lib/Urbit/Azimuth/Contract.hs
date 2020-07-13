@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -53,6 +54,6 @@ withContract selector action = Azimuth $ do
   , AI._block = BlockWithNumber block
   -- NB hardcoded to 40 gwei at present
   -- going to want a better way to specify gas price
-  , AI._gasPrice = Just 40000000000
+  , AI._gasPrice = Just 40_000_000_000
   }) action
 

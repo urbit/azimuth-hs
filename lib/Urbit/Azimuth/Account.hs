@@ -30,7 +30,7 @@ getLocalKey
   -> Either String A.LocalKey
 getLocalKey mnem pass path = do
   seed <- K.mnemonicToSeed pass mnem
-  pure . flip A.LocalKey 1 -- FIXME this targets mainnet only!
+  pure . flip A.LocalKey 1 -- NB this targets mainnet only
     . C.importKey
     . K.getSecKey
     . K.xPrvKey
