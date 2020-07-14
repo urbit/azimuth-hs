@@ -2,6 +2,8 @@
 
 module Urbit.Azimuth.Ecliptic (
     RevisionType(..)
+  , Approval(..)
+  , Reset(..)
 
   , exists
   , getApproved
@@ -10,8 +12,25 @@ module Urbit.Azimuth.Ecliptic (
   , canEscapeTo
   , configureKeys
   , createGalaxy
+  , safeTransferFrom
+  , transferFrom
+  , approve
+  , setApprovalForAll
+  , setManagementProxy
+  , spawn
+  , setSpawnProxy
+  , transferPoint
+  , setTransferProxy
+  , escape
+  , cancelEscape
+  , adopt
+  , reject
+  , detach
+  , setVotingProxy
+  , setDnsDomains
   ) where
 
+import qualified Data.Text as T
 import Network.Ethereum.Account (LocalKeyAccount)
 import qualified Network.Ethereum.Api.Types as Api
 import Network.JsonRpc.TinyClient (JsonRpc)
@@ -22,9 +41,22 @@ import Urbit.Azimuth.Point
 import qualified Urbit.Ob as Ob
 import qualified Urbit.Ob.Extended as Ob
 
+-- | Key revision options.
 data RevisionType =
-    Rotate
-  | Breach
+    Rotate   -- ^ Assign new keys
+  | Breach   -- ^ Assign new keys, breaching continuity in the process
+  deriving (Eq, Show)
+
+-- | Operator approval options.
+data Approval =
+    Approved   -- ^ Operator is allowed to transfer ownership of all points
+  | Disallowed -- ^ Operator is not allowed to transfer ownership of all points
+  deriving (Eq, Show)
+
+-- | Point transfer options.
+data Reset =
+    Preserve -- ^ Preserve existing key and permissions information
+  | Clear    -- ^ Reset (clear) existing key and permissions information
   deriving (Eq, Show)
 
 -- | Check if a point is active.
@@ -70,7 +102,60 @@ canEscapeTo point sponsor = withContract ecliptic $ do
       sp = Ob.patpToPoint sponsor
   I.canEscapeTo pt sp
 
--- | Configure a point's keys.
+-- | Safely transfer a point between addresses (call recipient if it's a
+--   contract).
+safeTransferFrom
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Address
+  -> Ob.Patp
+  -> Azimuth m Api.TxReceipt
+safeTransferFrom from to point = withContract ecliptic $ do
+  let pt = Ob.patpToSolidity256 point
+  I.safeTransferFrom from to pt
+
+-- | Transfer a point between addresses (without notifying recipient contract).
+transferFrom
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Address
+  -> Ob.Patp
+  -> Azimuth m Api.TxReceipt
+transferFrom from to point = withContract ecliptic $ do
+  let pt = Ob.patpToSolidity256 point
+  I.transferFrom from to pt
+
+-- | Approve an address to transfer ownership of a point.
+approve
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Ob.Patp
+  -> Azimuth m Api.TxReceipt
+approve addr point = withContract ecliptic $ do
+  let pt = Ob.patpToSolidity256 point
+  I.approve addr pt
+
+-- | Allow or disallow an operator to transfer ownership of all points owned by
+--   the message sender.
+setApprovalForAll
+  :: (JsonRpc m, MonadFail m)
+  => Address
+  -> Approval
+  -> Azimuth m Api.TxReceipt
+setApprovalForAll addr approval = withContract ecliptic $
+  I.setApprovalForAll addr (approval == Approved)
+
+-- | Configure the management address for a point owned by the message sender.
+setManagementProxy
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+setManagementProxy patp addr = withContract ecliptic $ do
+  let pt = Ob.patpToPoint patp
+  I.setManagementProxy pt addr
+
+-- | Configure a point's keys, optionally incrementing the continuity number.
 configureKeys
   :: (JsonRpc m, MonadFail m)
   => Ob.Patp
@@ -85,6 +170,118 @@ configureKeys patp Keys {..} breach = do
       bc    = breach == Breach
 
   withContract ecliptic $ I.configureKeys point ck ak cs bc
+
+-- | Spawn a point, giving ownership of it to the target address.
+spawn
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+spawn point addr = withContract ecliptic $ do
+  let pt = Ob.patpToPoint point
+  I.spawn pt addr
+
+-- | Give an address the right to spawn points with the given prefix.
+setSpawnProxy
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+setSpawnProxy patp addr = case Ob.patpToSolidity16 patp of
+  -- NB a proper way to handle this sort of error would be nice
+  Left _    -> error (show patp <> " is not a star or galaxy")
+  Right pt  -> withContract ecliptic $ I.setSpawnProxy pt addr
+
+-- | Transfer a point between addresses (without notifying recipient contract).
+transferPoint
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Reset
+  -> Azimuth m Api.TxReceipt
+transferPoint point addr reset = withContract ecliptic $ do
+  let pt = Ob.patpToPoint point
+  I.transferPoint pt addr (reset == Clear)
+
+-- | Configure the transfer proxy address for a point owned by the message
+--   sender.
+setTransferProxy
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+setTransferProxy patp addr = withContract ecliptic $ do
+  let pt = Ob.patpToPoint patp
+  I.setTransferProxy pt addr
+
+-- | Request escape from 'point' to 'sponsor'.
+escape
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Ob.Patp
+  -> Azimuth m Api.TxReceipt
+escape point sponsor = withContract ecliptic $ do
+  let pt = Ob.patpToPoint point
+      sp = Ob.patpToPoint sponsor
+  I.escape pt sp
+
+-- | Cancel a point's escape request.
+cancelEscape
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Azimuth m Api.TxReceipt
+cancelEscape point = withContract ecliptic $ do
+  let pt = Ob.patpToPoint point
+  I.cancelEscape pt
+
+-- | As a sponsor, accept a point's escape request.
+adopt
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Azimuth m Api.TxReceipt
+adopt escapee = withContract ecliptic $ do
+  let pt = Ob.patpToPoint escapee
+  I.adopt pt
+
+-- | As a sponsor, reject a point's escape request.
+reject
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Azimuth m Api.TxReceipt
+reject escapee = withContract ecliptic $ do
+  let pt = Ob.patpToPoint escapee
+  I.reject pt
+
+-- | As a sponsor, stop sponsoring a point.
+detach
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Azimuth m Api.TxReceipt
+detach escapee = withContract ecliptic $ do
+  let pt = Ob.patpToPoint escapee
+  I.detach pt
+
+-- | Configure the voting proxy address for a point owned by the message
+--   sender.
+setVotingProxy
+  :: (JsonRpc m, MonadFail m)
+  => Ob.Patp
+  -> Address
+  -> Azimuth m Api.TxReceipt
+setVotingProxy patp addr = case Ob.patpToGalaxy patp of
+  -- NB a proper way to handle this sort of error would be nice
+  Left _    -> error (show patp <> " is not a galaxy")
+  Right gal -> withContract ecliptic $ I.setVotingProxy gal addr
+
+-- | Set primary, secondary, and tertiary DNS domains for the ecliptic.
+setDnsDomains
+  :: (JsonRpc m, MonadFail m)
+  => T.Text
+  -> T.Text
+  -> T.Text
+  -> Azimuth m Api.TxReceipt
+setDnsDomains prim seco tert = withContract ecliptic $
+  I.setDnsDomains prim seco tert
 
 -- | Create the specified galaxy.
 createGalaxy
