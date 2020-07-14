@@ -1,5 +1,6 @@
 # azimuth-hs
 
+[![Hackage Version](https://img.shields.io/hackage/v/azimuth-hs.svg)](http://hackage.haskell.org/package/azimuth-hs)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
 
 Interact with [Azimuth](https://github.com/urbit/azimuth-solidity) from

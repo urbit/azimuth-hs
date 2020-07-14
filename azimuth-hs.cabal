@@ -7,10 +7,12 @@ homepage:      https://github.com/urbit/azimuth-hs
 category:      Urbit
 license:       MPL-2.0
 license-file:  LICENSE
-author:        Brendan Hay
+author:        Brendan Hay,
                Jared Tobin
 maintainer:    jared@jtobin.io
 copyright:     2020 Brendan Hay
+extra-source-files:
+  CHANGELOG
 
 data-files:
   etc/azimuth.json
