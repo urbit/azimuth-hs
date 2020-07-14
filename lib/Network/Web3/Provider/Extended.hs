@@ -14,7 +14,7 @@ import qualified Control.Exception as Exception
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Except (ExceptT, MonadError)
 import qualified Control.Monad.Except as Except
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.IO.Class (MonadIO)
 import qualified Control.Monad.State.Strict as State
 import Control.Monad.State.Strict (MonadState, StateT)
 import Network.Web3.Provider (Web3Error(..))

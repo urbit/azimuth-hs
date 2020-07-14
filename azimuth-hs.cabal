@@ -2,6 +2,7 @@ cabal-version: 2.4
 name:          azimuth-hs
 version:       0.1.0
 synopsis:      Interact with Azimuth from Haskell
+description:   Interact with Azimuth from Haskell
 homepage:      https://github.com/urbit/azimuth-hs
 license:       MPL-2.0
 license-file:  LICENSE
@@ -9,6 +10,7 @@ author:        Brendan Hay
                Jared Tobin
 maintainer:    jared@jtobin.io
 copyright:     2020 Brendan Hay
+
 data-files:
   etc/azimuth.json
   etc/ecliptic.json
@@ -19,6 +21,9 @@ source-repository head
 
 common base
   default-language:   Haskell2010
+  ghc-options:
+    -Weverything -Wno-safe -Wno-unsafe -Wno-missing-local-signatures
+    -Wno-missing-import-lists -Wno-implicit-prelude
   build-depends:
     base >= 4.12 && < 5
 
@@ -57,7 +62,9 @@ Test-suite tests
   main-is:             Main.hs
   default-language:    Haskell2010
   ghc-options:
-    -rtsopts
+    -rtsopts -Wno-monomorphism-restriction -Wno-unused-do-bind
+    -Wno-incomplete-uni-patterns -Wno-missing-export-lists
+    -Wno-unused-local-binds
   build-depends:
       azimuth-hs
     , hspec

@@ -25,14 +25,14 @@ import Network.JsonRpc.TinyClient (JsonRpc)
 data Contracts = Contracts {
     azimuth  :: Address
   , ecliptic :: Address
-  } deriving Show
+  } deriving stock Show
 
 newtype Azimuth m a =
     Azimuth (ReaderT Contracts (LocalKeyAccount m) a)
   deriving newtype (Functor, Applicative, Monad)
 
 runAzimuth
-  :: (JsonRpc m, MonadFail m)
+  :: JsonRpc m
   => Contracts
   -> LocalKey
   -> Azimuth m a
@@ -40,8 +40,8 @@ runAzimuth
 runAzimuth contracts account (Azimuth action) = withAccount account $
   runReaderT action contracts
 
-getContracts :: (JsonRpc m, MonadFail m) => LocalKeyAccount m Contracts
-getContracts = do
+getContracts :: JsonRpc m => m Contracts
+getContracts = withAccount () $ do
   azimuth  <- Ethereum.Ens.resolve "azimuth.eth"
   ecliptic <- Ethereum.Ens.resolve "ecliptic.eth"
   pure Contracts {..}

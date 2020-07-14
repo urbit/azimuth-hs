@@ -1,14 +1,14 @@
 module Urbit.Azimuth.Account (
     A.Account(..)
   , A.LocalKey(..)
-  , A.LocalKeyAccount(..)
+  , A.LocalKeyAccount
 
-  , C.PrivateKey(..)
-  , C.PublicKey(..)
+  , C.PrivateKey
+  , C.PublicKey
   , C.importKey
   , C.derivePubKey
 
-  , K.DerivPath(..)
+  , K.DerivPath
   , K.DerivPathI(..)
   , K.ParsedPath(..)
   , K.parsePath
