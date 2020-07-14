@@ -38,6 +38,7 @@ import GHC.Generics (Generic)
 import Prelude
 import Urbit.Ob (Patp)
 
+-- | An Azimuth point, represented by its \@p, 'Details', and 'Rights'.
 data Point = Point {
     pointPatp    :: Patp
   , pointDetails :: Details
@@ -45,6 +46,7 @@ data Point = Point {
   }
   deriving stock (Show, Eq, Generic)
 
+-- | Various information about a 'Point'.
 data Details = Details {
     detailsCryptKey          :: CryptKey
   , detailsAuthKey           :: AuthKey
@@ -59,6 +61,7 @@ data Details = Details {
   }
   deriving stock (Show, Eq, Generic)
 
+-- | Ownership and proxy information for a 'Point'.
 data Rights = Rights {
     rightsOwner           :: Address
   , rightsManagementProxy :: Maybe Address
@@ -68,36 +71,42 @@ data Rights = Rights {
   }
   deriving stock (Show, Eq, Generic)
 
+-- | A point's public encryption key.
 newtype CryptKey = CryptKey {
     fromCryptKey :: Solidity.Prim.BytesN 32
   }
   deriving stock (Show, Eq)
   deriving newtype (Semigroup, Monoid)
 
+-- | A point's public authentication key.
 newtype AuthKey = AuthKey {
     fromAuthKey :: Solidity.Prim.BytesN 32
   }
   deriving stock (Show, Eq)
   deriving newtype (Semigroup, Monoid)
 
+-- | A point's crypto suite version.
 newtype CryptoSuite = CryptoSuite {
     fromCryptoSuite :: Solidity.Prim.UIntN 32
   }
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
 
+-- | A point's life (i.e., recorded number of key revisions).
 newtype Life = Life {
     fromLife :: Solidity.Prim.UIntN 32
   }
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
 
+-- | A point's rift (i.e., recorded number of continuity breaches).
 newtype Rift = Rift {
     fromRift :: Solidity.Prim.UIntN 32
   }
   deriving stock (Show, Eq, Ord)
   deriving newtype (Num, Real, Enum, Bounded, Integral)
 
+-- | Public key information for a 'Point'.
 data Keys = Keys {
     keyCrypt       :: CryptKey
   , keyAuth        :: AuthKey

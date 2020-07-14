@@ -72,3 +72,17 @@ Test-suite tests
     , text
     , urbit-hob
 
+Test-suite doctests
+  import:              base
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Doc.hs
+  default-language:    Haskell2010
+  ghc-options:
+    -rtsopts -Wno-monomorphism-restriction -Wno-unused-do-bind
+    -Wno-incomplete-uni-patterns -Wno-missing-export-lists
+    -Wno-unused-local-binds
+  build-depends:
+      azimuth-hs
+    , urbit-hob
+

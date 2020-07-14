@@ -23,6 +23,15 @@ import qualified Crypto.Ethereum as C
 import qualified Haskoin.Keys as K
 import qualified Network.Ethereum.Account as A
 
+-- | Recover a private key from a BIP39 mnemonic, passphrase, and HD derivation
+--   path.
+--
+--   Note that you can use the monoid unit, 'mempty', to denote an empty or
+--   absent passphrase.
+--
+--   >>> let mnem = "benefit crew supreme gesture quantum web media hazard theory mercy wing kitten"
+--   >>> let hdpath = Deriv :| 44 :| 60 :| 0 :/ 0 :/ 0 -- m/44'/60'/0'/0/0
+--   >>> toPrivateKey mnem mempty hdpath
 toPrivateKey
   :: K.Mnemonic
   -> K.Passphrase
