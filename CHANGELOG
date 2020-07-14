@@ -1,0 +1,8 @@
+# Changelog
+
+- 0.1.0 (2020-07-14)
+    * Initial release.
+
+      Supports the Azimuth and Ecliptic contracts, basic account management,
+      and basic transaction submission.
+
