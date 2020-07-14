@@ -13,6 +13,8 @@ module Urbit.Azimuth.Point (
   , CryptKey(..)
   , AuthKey(..)
   , CryptoSuite(..)
+  , keyInformation
+
   , Life(..)
   , Rift(..)
 
@@ -28,7 +30,12 @@ module Urbit.Azimuth.Point (
   , isVotingProxy
 
   , hasBeenLinked
-  , keyInformation
+  , canManageNetworkKeys
+  , canSponsor
+  , canManage
+  , canSpawn
+  , canVote
+  , canTransfer
   ) where
 
 import qualified Data.ByteArray.Sized as DBS
@@ -37,6 +44,7 @@ import qualified Data.Solidity.Prim as Solidity.Prim (UIntN, BytesN)
 import GHC.Generics (Generic)
 import Prelude
 import Urbit.Ob (Patp)
+import qualified Urbit.Ob as Ob
 
 -- | An Azimuth point, represented by its \@p, 'Details', and 'Rights'.
 data Point = Point {
@@ -71,6 +79,15 @@ data Rights = Rights {
   }
   deriving stock (Show, Eq, Generic)
 
+-- | Grab a point's key information.
+keyInformation :: Point -> Keys
+keyInformation Point {..} = Keys {
+      keyCrypt       = detailsCryptKey
+    , keyAuth        = detailsAuthKey
+    , keyCryptoSuite = detailsCryptoSuite
+    }
+  where
+    Details {..} = pointDetails
 -- | A point's public encryption key.
 newtype CryptKey = CryptKey {
     fromCryptKey :: Solidity.Prim.BytesN 32
@@ -168,12 +185,44 @@ isVotingProxy Point {..} addr = case rightsVotingProxy pointRights of
   Just a  -> a == addr
   Nothing -> False
 
--- | Grab a point's key information.
-keyInformation :: Point -> Keys
-keyInformation Point {..} = Keys {
-      keyCrypt       = detailsCryptKey
-    , keyAuth        = detailsAuthKey
-    , keyCryptoSuite = detailsCryptoSuite
-    }
+-- | Check if an address can manage a point's networking keys.
+canManageNetworkKeys :: Point -> Address -> Bool
+canManageNetworkKeys point addr =
+     canManage point addr
+  && hasBeenLinked point
+
+-- | Check if a point can sponsor another.
+canSponsor :: Point -> Bool
+canSponsor Point {..} = case Ob.clan pointPatp of
+  Ob.Galaxy -> True
+  Ob.Star   -> True
+  _         -> False
+
+-- | Check if an address can manage a point.
+canManage :: Point -> Address -> Bool
+canManage point addr =
+     isOwner point addr
+  || isManagementProxy point addr
+
+-- | Check if an address can spawn for a point.
+canSpawn :: Point -> Address -> Bool
+canSpawn point addr =
+     canSponsor point
+  && hasBeenLinked point
+  && (isOwner point addr || isSpawnProxy point addr)
+
+-- | Check if an address can vote for a point.
+canVote :: Point -> Address -> Bool
+canVote point@Point {..} addr =
+       Ob.Galaxy == Ob.clan pointPatp
+    && detailsActive
+    && (isOwner point addr || isVotingProxy point addr)
   where
     Details {..} = pointDetails
+
+-- | Check if an address can transfer ownership of a point.
+canTransfer :: Point -> Address -> Bool
+canTransfer point addr =
+     isOwner point addr
+  || isTransferProxy point addr
+
