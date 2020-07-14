@@ -16,19 +16,19 @@ module Urbit.Azimuth.Account (
   , K.Mnemonic
   , K.Passphrase
 
-  , getLocalKey
+  , toPrivateKey
   ) where
 
 import qualified Crypto.Ethereum as C
 import qualified Haskoin.Keys as K
 import qualified Network.Ethereum.Account as A
 
-getLocalKey
+toPrivateKey
   :: K.Mnemonic
   -> K.Passphrase
   -> K.DerivPath
   -> Either String A.LocalKey
-getLocalKey mnem pass path = do
+toPrivateKey mnem pass path = do
   seed <- K.mnemonicToSeed pass mnem
   pure . flip A.LocalKey 1 -- NB this targets mainnet only
     . C.importKey

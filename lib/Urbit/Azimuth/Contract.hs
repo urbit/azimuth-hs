@@ -16,10 +16,9 @@ module Urbit.Azimuth.Contract (
 import Control.Monad.Trans (lift)
 import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Solidity.Prim.Address (Address)
-import Network.Ethereum.Account (LocalKeyAccount)
+import Network.Ethereum.Account (LocalKeyAccount, LocalKey, withAccount)
 import qualified Network.Ethereum.Account as Ethereum.Account
 import qualified Network.Ethereum.Account.Internal as AI
-import Network.Ethereum.Api.Types (DefaultBlock(..), Quantity)
 import qualified Network.Ethereum.Ens as Ethereum.Ens
 import Network.JsonRpc.TinyClient (JsonRpc)
 
@@ -29,12 +28,17 @@ data Contracts = Contracts {
   } deriving Show
 
 newtype Azimuth m a =
-    Azimuth (ReaderT (Contracts, Quantity) (LocalKeyAccount m) a)
+    Azimuth (ReaderT Contracts (LocalKeyAccount m) a)
   deriving newtype (Functor, Applicative, Monad)
 
-runAzimuth :: Contracts -> Quantity -> Azimuth m a -> LocalKeyAccount m a
-runAzimuth contracts block (Azimuth action) =
-  runReaderT action (contracts, block)
+runAzimuth
+  :: (JsonRpc m, MonadFail m)
+  => Contracts
+  -> LocalKey
+  -> Azimuth m a
+  -> m a
+runAzimuth contracts account (Azimuth action) = withAccount account $
+  runReaderT action contracts
 
 getContracts :: (JsonRpc m, MonadFail m) => LocalKeyAccount m Contracts
 getContracts = do
@@ -48,10 +52,9 @@ withContract
   -> LocalKeyAccount m a
   -> Azimuth m a
 withContract selector action = Azimuth $ do
-  (contracts, block) <- ask
+  contracts <- ask
   lift $ Ethereum.Account.withParam (\param -> param {
     AI._to    = Just (selector contracts)
-  , AI._block = BlockWithNumber block
   -- NB hardcoded to 40 gwei at present
   -- going to want a better way to specify gas price
   , AI._gasPrice = Just 40_000_000_000
