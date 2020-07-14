@@ -1,5 +1,5 @@
 cabal-version: 2.4
-name:          urbit-azimuth
+name:          azimuth-hs
 version:       0.1.0
 synopsis:      Interact with Azimuth from Haskell
 homepage:      https://github.com/urbit/azimuth-hs
