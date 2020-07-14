@@ -52,9 +52,9 @@ testConfig :: Config
 testConfig = Config {..} where
   endpt        = "http://localhost:8545"
   pbase        = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
-  Right pk0    = A.getLocalKey mnem mempty (pbase A.:/ 0)
-  Right pk1    = A.getLocalKey mnem mempty (pbase A.:/ 1)
-  Right pk2    = A.getLocalKey mnem mempty (pbase A.:/ 2)
+  Right pk0    = A.toPrivateKey mnem mempty (pbase A.:/ 0)
+  Right pk1    = A.toPrivateKey mnem mempty (pbase A.:/ 1)
+  Right pk2    = A.toPrivateKey mnem mempty (pbase A.:/ 2)
 
   mnem         = "benefit crew supreme gesture quantum web media hazard " <>
                  "theory mercy wing kitten"
@@ -81,7 +81,7 @@ main = do
         , keyCryptoSuite = A.CryptoSuite 1
         }
 
-  client <- A.defaultSettings endpt
+  endpoint <- A.defaultSettings endpt
 
   -- NB eventually this should use the 'around_ withGanache' context, but a
   --    contract deployment action will need to be added first.
@@ -93,60 +93,46 @@ main = do
 
   hspec $ do
     it "creates galaxies properly" $ do
-      (z0, n0) <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $ do
-            zp <- A.getPoint zod
-            np <- A.getPoint nec
-            pure (zp, np)
+      (z0, n0) <- A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $ do
+          zp <- A.getPoint zod
+          np <- A.getPoint nec
+          pure (zp, np)
 
       A.pointDetails z0 `shouldNotSatisfy` A.detailsActive
       A.pointDetails n0 `shouldNotSatisfy` A.detailsActive
 
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.createGalaxy zod "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.createGalaxy zod "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      (z1, n1) <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $ do
-            zp <- A.getPoint zod
-            np <- A.getPoint nec
-            pure (zp, np)
+      (z1, n1) <- A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $ do
+          zp <- A.getPoint zod
+          np <- A.getPoint nec
+          pure (zp, np)
 
       A.pointDetails z1 `shouldSatisfy` A.detailsActive
       A.pointDetails n1 `shouldSatisfy` A.detailsActive
 
     it "rotates keys properly" $ do
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.configureKeys zod keys A.Rotate
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.configureKeys zod keys A.Rotate
 
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.configureKeys nec keys A.Rotate
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.configureKeys nec keys A.Rotate
 
-      (kz, kn) <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $ do
-            zp <- A.getPoint zod
-            np <- A.getPoint nec
-            pure (A.keyInformation zp, A.keyInformation np)
+      (kz, kn) <- A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $ do
+          zp <- A.getPoint zod
+          np <- A.getPoint nec
+          pure (A.keyInformation zp, A.keyInformation np)
 
       A.keyCrypt kz `shouldBe` (A.CryptKey bytes)
       A.keyAuth kz `shouldBe` (A.AuthKey bytes)
@@ -154,33 +140,25 @@ main = do
       A.keyAuth kn `shouldBe` (A.AuthKey bytes)
 
     it "breaches continuity properly" $ do
-      (z0, n0) <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $ do
-            zp <- A.getPoint zod
-            np <- A.getPoint nec
-            pure (zp, np)
+      (z0, n0) <- A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $ do
+          zp <- A.getPoint zod
+          np <- A.getPoint nec
+          pure (zp, np)
 
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.configureKeys zod keys A.Breach
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.configureKeys zod keys A.Breach
 
-      A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $
-            A.configureKeys nec keys A.Breach
+      A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $
+          A.configureKeys nec keys A.Breach
 
-      (z1, n1) <- A.runWeb3 client $ do
-        block <- A.blockNumber
-        A.withAccount pk0 $
-          A.runAzimuth contracts block $ do
-            zp <- A.getPoint zod
-            np <- A.getPoint nec
-            pure (zp, np)
+      (z1, n1) <- A.runWeb3 endpoint $
+        A.runAzimuth contracts pk0 $ do
+          zp <- A.getPoint zod
+          np <- A.getPoint nec
+          pure (zp, np)
 
       let getRift = A.detailsRift . A.pointDetails
 

@@ -3,7 +3,7 @@ name:          azimuth-hs
 version:       0.1.0
 synopsis:      Interact with Azimuth from Haskell
 homepage:      https://github.com/urbit/azimuth-hs
-license:       MIT
+license:       MPL-2.0
 license-file:  LICENSE
 author:        Brendan Hay
                Jared Tobin
@@ -59,11 +59,9 @@ Test-suite tests
   ghc-options:
     -rtsopts
   build-depends:
-      haskoin-core == 0.13.4
+      azimuth-hs
     , hspec
     , shelly
     , text
-    , urbit-azimuth
     , urbit-hob
-    , web3 == 0.9.1.0
 
