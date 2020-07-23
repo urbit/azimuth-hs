@@ -20,7 +20,7 @@ module Urbit.Azimuth.Account (
   ) where
 
 import qualified Crypto.Ethereum as C
-import qualified Haskoin.Keys as K
+import qualified Network.Haskoin.Keys as K
 import qualified Network.Ethereum.Account as A
 
 -- | Recover a private key from a BIP39 mnemonic, passphrase, and HD derivation
