@@ -10,6 +10,7 @@ license-file:  LICENSE
 author:        Brendan Hay,
                Jared Tobin
 maintainer:    jared@jtobin.io
+tested-with:   GHC == 8.8.3
 copyright:     2020 Brendan Hay
 extra-source-files:
   CHANGELOG
@@ -57,23 +58,6 @@ library
   other-modules:
     Network.Web3.Provider.Extended
     Urbit.Ob.Extended
-
-Test-suite tests
-  import:              base
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  ghc-options:
-    -rtsopts -Wno-monomorphism-restriction -Wno-unused-do-bind
-    -Wno-incomplete-uni-patterns -Wno-missing-export-lists
-    -Wno-unused-local-binds
-  build-depends:
-      azimuth-hs
-    , hspec
-    , shelly
-    , text
-    , urbit-hob
 
 Test-suite doctests
   import:              base
