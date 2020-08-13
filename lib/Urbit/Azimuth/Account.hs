@@ -1,7 +1,14 @@
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Urbit.Azimuth.Account (
     A.Account(..)
   , A.LocalKey(..)
   , A.LocalKeyAccount
+  , A.PersonalAccount
+  , A.DefaultAccount
+
+  , Unlockable
 
   , C.PrivateKey
   , C.PublicKey
@@ -22,6 +29,10 @@ module Urbit.Azimuth.Account (
 import qualified Crypto.Ethereum as C
 import qualified Network.Haskoin.Keys as K
 import qualified Network.Ethereum.Account as A
+import qualified Network.Ethereum.Account.Internal as AI
+import Network.JsonRpc.TinyClient (JsonRpc)
+
+type Unlockable p m = (JsonRpc m, A.Account p (AI.AccountT p))
 
 -- | Recover a private key from a BIP39 mnemonic, passphrase, and HD derivation
 --   path.

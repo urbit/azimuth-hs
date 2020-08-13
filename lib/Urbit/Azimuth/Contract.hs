@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -16,11 +17,11 @@ module Urbit.Azimuth.Contract (
 import Control.Monad.Trans (lift)
 import Control.Monad.Reader (ReaderT(..), ask)
 import Data.Solidity.Prim.Address (Address)
-import Network.Ethereum.Account (LocalKeyAccount, LocalKey, withAccount)
 import qualified Network.Ethereum.Account as Ethereum.Account
 import qualified Network.Ethereum.Account.Internal as AI
 import qualified Network.Ethereum.Ens as Ethereum.Ens
 import Network.JsonRpc.TinyClient (JsonRpc)
+import Urbit.Azimuth.Account
 
 -- | Supported Azimuth contracts.
 data Contracts = Contracts {
@@ -30,16 +31,16 @@ data Contracts = Contracts {
 
 -- | The Azimuth type represents an authenticated connection to a JSON RPC by
 --   way of a local private key, and has access to a 'Contracts' object.
-newtype Azimuth m a =
-    Azimuth (ReaderT Contracts (LocalKeyAccount m) a)
+newtype Azimuth p m a =
+    Azimuth (ReaderT Contracts (AI.AccountT p m) a)
   deriving newtype (Functor, Applicative, Monad)
 
 -- | Run an Azimuth action.
 runAzimuth
-  :: JsonRpc m
+  :: Unlockable p m
   => Contracts
-  -> LocalKey
-  -> Azimuth m a
+  -> p
+  -> Azimuth p m a
   -> m a
 runAzimuth contracts account (Azimuth action) = withAccount account $
   runReaderT action contracts
@@ -53,10 +54,10 @@ getContracts = withAccount () $ do
 
 -- | Perform an Azimuth action, targeting the appropriate contract.
 withContract
-  :: Monad m
+  :: Unlockable p m
   => (Contracts -> Address)
-  -> LocalKeyAccount m a
-  -> Azimuth m a
+  -> AI.AccountT p m a
+  -> Azimuth p m a
 withContract selector action = Azimuth $ do
   contracts <- ask
   lift $ Ethereum.Account.withParam (\param -> param {
