@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.2.0 (2020-08-13)
+    * Generalizes account types to include hs-web3's 'DefaultAccount' and
+      'PersonalAccount', in addition to the existing 'LocalKeyAccount'.
+
 - 0.1.0 (2020-07-14)
     * Initial release.
 
