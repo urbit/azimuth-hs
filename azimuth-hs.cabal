@@ -37,7 +37,7 @@ library
   build-depends:
       data-default-class >= 0.1.2.0  && < 0.2
     , exceptions         >= 0.10     && < 1.0
-    , haskoin-core       == 0.12.0
+    , haskoin-core       >= 0.12     && < 0.16
     , memory             >= 0.15     && < 1.0
     , mtl                >= 2.2      && < 3.0
     , text               >= 1.2      && < 2.0
