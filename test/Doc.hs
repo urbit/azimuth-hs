@@ -16,24 +16,32 @@ main = do
   endpoint  <- A.defaultSettings infura
   contracts <- A.runWeb3 endpoint A.getContracts
 
+  let zod = Ob.patp 0
+      nec = Ob.patp 1
+
+  -- fetch ~zod's public info, using endpoint's default account
+  zodInfo <- A.runWeb3 endpoint $
+    A.runAzimuth contracts () $
+      A.getPoint zod
+
+  -- to use an account..
+
   -- use a test mnemonic
   let mnem = "benefit crew supreme gesture quantum "
           <> "web media hazard theory mercy wing kitten"
 
-  -- and a standard HD path (m/44'/60'/0'/0/0)
-  let hdpath  = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0 A.:/ 0
+  -- and a standard HD path
+  let hdpath  = "m/44'/60'/0'/0/0" :: A.DerivPath
 
-  -- unlock the corresponding account
   let account = case A.toPrivateKey mnem mempty hdpath of
         Left _    -> error "bogus creds"
         Right acc -> acc
 
-  let zod = Ob.patp 0
-
-  -- fetch ~zod's public info
-  point <- A.runWeb3 endpoint $
+  -- fetch ~nec's public info, using a local account
+  necInfo <- A.runWeb3 endpoint $
     A.runAzimuth contracts account $
       A.getPoint zod
 
-  -- print it
-  print point
+  -- print the details
+  print zodInfo
+  print necInfo
