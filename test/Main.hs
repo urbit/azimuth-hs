@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Main where
@@ -52,9 +53,9 @@ testConfig :: Config
 testConfig = Config {..} where
   endpt        = "http://localhost:8545"
   pbase        = A.Deriv A.:| 44 A.:| 60 A.:| 0 A.:/ 0
-  Right pk0    = A.toPrivateKey mnem mempty (pbase A.:/ 0)
-  Right pk1    = A.toPrivateKey mnem mempty (pbase A.:/ 1)
-  Right pk2    = A.toPrivateKey mnem mempty (pbase A.:/ 2)
+  Right pk0    = A.toPrivateKey mnem mempty (pbase A.:/ 0) 1
+  Right pk1    = A.toPrivateKey mnem mempty (pbase A.:/ 1) 1
+  Right pk2    = A.toPrivateKey mnem mempty (pbase A.:/ 2) 1
 
   mnem         = "benefit crew supreme gesture quantum web media hazard " <>
                  "theory mercy wing kitten"
@@ -165,3 +166,8 @@ main = do
       getRift z1 `shouldSatisfy` (> (getRift z0))
       getRift n1 `shouldSatisfy` (> (getRift n0))
 
+    it "works with optional transaction parameters" $ do
+      let txnParams = A.defaultTxnParams { A.txnGasPrice = 100_000_000_000 }
+      A.runWeb3 endpoint $
+        A.runAzimuth' contracts txnParams pk0 $
+          A.configureKeys zod keys A.Rotate
