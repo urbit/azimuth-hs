@@ -1,6 +1,6 @@
 cabal-version: 2.4
 name:          azimuth-hs
-version:       0.2.0
+version:       0.2.1
 synopsis:      Interact with Azimuth from Haskell
 description:   Haskell bindings for Azimuth (https://github.com/urbit/azimuth)
 homepage:      https://github.com/urbit/azimuth-hs

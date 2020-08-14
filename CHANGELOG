@@ -1,5 +1,11 @@
 # Changelog
 
+- 0.2.1 (2020-08-13)
+    * Allows the specification of optional transaction parameters via
+      Urbit.Azimuth.runAzimuth' (note the apostrophe).
+    * The chain ID must now be passed explicitly to the
+      Urbit.Azimuth.Account.toPrivateKey helper (previously it defaulted to 1).
+
 - 0.2.0 (2020-08-13)
     * Generalizes account types to include hs-web3's 'DefaultAccount' and
       'PersonalAccount', in addition to the existing 'LocalKeyAccount'.
