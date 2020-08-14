@@ -28,15 +28,20 @@ To use the various functions provided, you'll generally want to:
   [hs-web3](https://github.com/airalab/hs-web3)'s `defaultSettings` function,
   re-exported here),
 
-* provide a `Contracts` object (this can be procured via `getContracts`),
+* provide a `Contracts` object (this can be procured via `getContracts` for
+  mainnet),
 
-* provide a private key, and then,
+* provide an account, and then,
 
 * use `runAzimuth` to call the desired contract function with the necessary
   information.
 
-You can check out the [quickstart section](#quickstart) below to see an example
-of the whole dance.
+By 'provide an account', I mean you'll typically need to pass a private key.
+But if you're just reading from the chain, you can typically use the endpoint's
+default account, specified via unit (i.e. `()`).
+
+Check out the [quickstart section](#quickstart) below to see an examples of all
+the above.
 
 ## Quickstart
 
@@ -50,63 +55,68 @@ web3:
 import qualified Urbit.Azimuth as A
 import qualified Urbit.Ob as Ob
 
--- A simple test endpoint.  You'll probably want to set up your own.
+-- A test endpoint definition.  You'll want to set up your own to do anything
+-- interesting.
 infura :: String
-infura = "https://mainnet.infura.io/v3/b7d2af9f01534031ba773374f766ef65"
+infura = "MY_INFURA_ENDPOINT"
 
 -- A simple example of setting up an endpoint, fetching the Azimuth contracts,
--- getting a private key from a BIP39 mnemonic and HD path, and fetching ~zod's
--- public information.
+-- getting a private key from a BIP39 mnemonic and HD path, and fetching the
+-- public information for a few ships.
 
 main :: IO ()
 main = do
   endpoint  <- A.defaultSettings infura
+
+  -- fetch the mainnet contract addresses
   contracts <- A.runWeb3 endpoint A.getContracts
 
   let zod = Ob.patp 0
       nec = Ob.patp 1
       bud = Ob.patp 2
 
-  -- fetch ~zod's public info, using endpoint's default account
+  -- fetch ~zod's public info, using endpoint's default account ()
   zodInfo <- A.runWeb3 endpoint $
     A.runAzimuth contracts () $
       A.getPoint zod
 
   print zodInfo
 
-  -- to use an account..
+  -- to use a nontrivial account:
 
-  -- use a test mnemonic
+  -- take a test BIP39 mnemonic
   let mnem = "benefit crew supreme gesture quantum "
           <> "web media hazard theory mercy wing kitten"
 
   -- a standard HD path
   let hdpath  = "m/44'/60'/0'/0/0" :: A.DerivPath
 
-  -- and ethereum mainnet
+  -- and the ethereum mainnet chain ID
   let chainId = 1
 
+  -- and then use them to derive a suitable private key
   let account = case A.toPrivateKey mnem mempty hdpath chainId of
         Left _    -> error "bogus creds"
         Right acc -> acc
 
-  -- fetch ~nec's public info, using a local account
+  -- fetch ~nec's public info, using this private key to auth
   necInfo <- A.runWeb3 endpoint $
     A.runAzimuth contracts account $
       A.getPoint zod
 
   print necInfo
 
-  -- you can set gas price, etc. as follows
+  -- you can also set the gas price, etc. as follows
   let params = A.defaultTxnParams { A.txnGasPrice = Just 100_000_000_000 }
 
-  -- use runAzimuth' to supply those
+  -- (see Urbit.Azimuth.Transaction for details on those)
+
+  -- use runAzimuth' (notice the apostrophe) to supply those parameters
   budInfo <- A.runWeb3 endpoint $
     A.runAzimuth' contracts params account $
       A.getPoint bud
 
   print budInfo
-
 ```
 
 ## Building
@@ -122,6 +132,6 @@ may need to build from within a Nix shell with
 done as follows:
 
 ```
-~/src/azimuth-hs$ nix-shell -p zlib.dev secp256k1 pkg-config
-[nix-shell:~src/azimuth-hs]$ cabal new-repl azimuth-hs
+$ nix-shell -p zlib.dev secp256k1 pkg-config
+[nix-shell]$ cabal new-repl azimuth-hs
 ```
