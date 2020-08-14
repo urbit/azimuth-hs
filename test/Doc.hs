@@ -1,3 +1,4 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import qualified Urbit.Azimuth as A
@@ -18,11 +19,14 @@ main = do
 
   let zod = Ob.patp 0
       nec = Ob.patp 1
+      bud = Ob.patp 2
 
   -- fetch ~zod's public info, using endpoint's default account
   zodInfo <- A.runWeb3 endpoint $
     A.runAzimuth contracts () $
       A.getPoint zod
+
+  print zodInfo
 
   -- to use an account..
 
@@ -45,6 +49,15 @@ main = do
     A.runAzimuth contracts account $
       A.getPoint zod
 
-  -- print the details
-  print zodInfo
   print necInfo
+
+  -- you can set gas price, etc. as follows
+  let params = A.defaultTxnParams { A.txnGasPrice = Just 100_000_000_000 }
+
+  -- use runAzimuth' to supply those
+  budInfo <- A.runWeb3 endpoint $
+    A.runAzimuth' contracts params account $
+      A.getPoint bud
+
+  print budInfo
+

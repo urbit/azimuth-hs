@@ -167,7 +167,10 @@ main = do
       getRift n1 `shouldSatisfy` (> (getRift n0))
 
     it "works with optional transaction parameters" $ do
-      let txnParams = A.defaultTxnParams { A.txnGasPrice = 100_000_000_000 }
+      let txnParams = A.defaultTxnParams {
+            A.txnGasPrice = Just 100_000_000_000
+          }
+
       A.runWeb3 endpoint $
         A.runAzimuth' contracts txnParams pk0 $
           A.configureKeys zod keys A.Rotate
