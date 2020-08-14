@@ -30,10 +30,13 @@ main = do
   let mnem = "benefit crew supreme gesture quantum "
           <> "web media hazard theory mercy wing kitten"
 
-  -- and a standard HD path
+  -- a standard HD path
   let hdpath  = "m/44'/60'/0'/0/0" :: A.DerivPath
 
-  let account = case A.toPrivateKey mnem mempty hdpath of
+  -- and ethereum mainnet
+  let chainId = 1
+
+  let account = case A.toPrivateKey mnem mempty hdpath chainId of
         Left _    -> error "bogus creds"
         Right acc -> acc
 
