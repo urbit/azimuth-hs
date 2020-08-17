@@ -1,6 +1,8 @@
-{ nixpkgs ? import ./nix/nixpkgs.nix { } }:
+{ sources ? import ./nix/sources.nix { } }:
 
 let
+
+  nixpkgs = import sources.nixpkgs {};
 
   inherit (nixpkgs) pkgs;
   inherit (pkgs) haskellPackages;

@@ -1,9 +1,6 @@
 let
-
-  pkgs = import ./nix/nixpkgs.nix { };
-
+  sources = import ./nix/sources.nix { };
+  pkgs    = import sources.nixpkgs {};
   azimuth = pkgs.haskellPackages.callPackage ./default.nix { };
-
 in
-
   azimuth
