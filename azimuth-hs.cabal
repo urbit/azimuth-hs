@@ -68,7 +68,7 @@ Test-suite tests
   ghc-options:
     -rtsopts -Wno-monomorphism-restriction -Wno-unused-do-bind
     -Wno-incomplete-uni-patterns -Wno-missing-export-lists
-    -Wno-unused-local-binds
+    -Wno-unused-local-binds -Wno-missed-specialisations
   build-depends:
       azimuth-hs
     , hspec
@@ -85,7 +85,7 @@ Test-suite doctests
   ghc-options:
     -rtsopts -Wno-monomorphism-restriction -Wno-unused-do-bind
     -Wno-incomplete-uni-patterns -Wno-missing-export-lists
-    -Wno-unused-local-binds
+    -Wno-unused-local-binds -Wno-missed-specialisations
   build-depends:
       azimuth-hs
     , urbit-hob
