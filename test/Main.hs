@@ -171,6 +171,19 @@ main = do
             A.txnGasPrice = Just 100_000_000_000
           }
 
+      let getLife = A.detailsLife . A.pointDetails
+
+      z0 <- A.runWeb3 endpoint $
+        A.runAzimuth contracts () $
+          A.getPoint zod
+
       A.runWeb3 endpoint $
         A.runAzimuth' contracts txnParams pk0 $
           A.configureKeys zod keys A.Rotate
+
+      z1 <- A.runWeb3 endpoint $
+        A.runAzimuth contracts () $
+          A.getPoint zod
+
+      getLife z1 `shouldSatisfy` (> (getLife z0))
+

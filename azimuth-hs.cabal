@@ -26,13 +26,14 @@ common base
   default-language:   Haskell2010
   ghc-options:
     -Weverything -Wno-safe -Wno-unsafe -Wno-missing-local-signatures
-    -Wno-missing-import-lists -Wno-implicit-prelude
+    -Wno-missing-import-lists -Wno-implicit-prelude -Wno-missed-specialisations
   build-depends:
     base >= 4.12 && < 5
 
 library
-  import:          base
-  hs-source-dirs:  lib
+  import:                base
+  hs-source-dirs:        lib
+
   build-depends:
       data-default-class >= 0.1.2.0  && < 0.2
     , exceptions         >= 0.10     && < 1.0

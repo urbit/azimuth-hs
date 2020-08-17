@@ -122,16 +122,17 @@ main = do
 ## Building
 
 Note that depending on your system and GHC installation, a few transitive
-dependencies may prove tricky to build.
-
-In particular, if you've installed GHC with [Nix](https://nixos.org/nix), you
-may need to build from within a Nix shell with
-[zlib-dev](https://www.zlib.net/),
+dependencies may prove tricky to build.  In particular, if you've installed GHC
+with [Nix](https://nixos.org/nix), you may need to build from within a Nix
+shell with [zlib-dev](https://www.zlib.net/),
 [libsecp256k1](https://github.com/bitcoin-core/secp256k1), and
-[pkg-config](https://en.wikipedia.org/wiki/Pkg-config) present.  That can be
-done as follows:
+[pkg-config](https://en.wikipedia.org/wiki/Pkg-config) present.
+
+A suitable [Nix](https://nixos.org/) shell is provided in `shell.nix`, so you
+can get a repl via:
 
 ```
-$ nix-shell -p zlib.dev secp256k1 pkg-config
-[nix-shell]$ cabal new-repl azimuth-hs
+~/src/azimuth-hs$ nix-shell
+[nix-shell:~/src/azimuth-hs]$ cabal new-repl
 ```
+
