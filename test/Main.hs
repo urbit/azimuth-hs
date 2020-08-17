@@ -82,6 +82,9 @@ main = do
         , keyCryptoSuite = A.CryptoSuite 1
         }
 
+      getRift = A.detailsRift . A.pointDetails
+      getLife = A.detailsLife . A.pointDetails
+
   endpoint <- A.defaultSettings endpt
 
   -- NB eventually this should use the 'around_ withGanache' context, but a
@@ -103,15 +106,13 @@ main = do
       A.pointDetails z0 `shouldNotSatisfy` A.detailsActive
       A.pointDetails n0 `shouldNotSatisfy` A.detailsActive
 
-      A.runWeb3 endpoint $
+      (z1, n1) <- A.runWeb3 endpoint $ do
         A.runAzimuth contracts pk0 $
           A.createGalaxy zod "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      A.runWeb3 endpoint $
         A.runAzimuth contracts pk0 $
           A.createGalaxy nec "0x6DEfFb0caFDB11D175F123F6891AA64F01c24F7d"
 
-      (z1, n1) <- A.runWeb3 endpoint $
         A.runAzimuth contracts pk0 $ do
           zp <- A.getPoint zod
           np <- A.getPoint nec
@@ -121,15 +122,9 @@ main = do
       A.pointDetails n1 `shouldSatisfy` A.detailsActive
 
     it "rotates keys properly" $ do
-      A.runWeb3 endpoint $
-        A.runAzimuth contracts pk0 $
-          A.configureKeys zod keys A.Rotate
-
-      A.runWeb3 endpoint $
-        A.runAzimuth contracts pk0 $
-          A.configureKeys nec keys A.Rotate
-
-      (kz, kn) <- A.runWeb3 endpoint $
+      (kz, kn) <- A.runWeb3 endpoint $ do
+        A.runAzimuth contracts pk0 $ A.configureKeys zod keys A.Rotate
+        A.runAzimuth contracts pk0 $ A.configureKeys nec keys A.Rotate
         A.runAzimuth contracts pk0 $ do
           zp <- A.getPoint zod
           np <- A.getPoint nec
@@ -147,21 +142,15 @@ main = do
           np <- A.getPoint nec
           pure (zp, np)
 
-      A.runWeb3 endpoint $
-        A.runAzimuth contracts pk0 $
-          A.configureKeys zod keys A.Breach
-
-      A.runWeb3 endpoint $
-        A.runAzimuth contracts pk0 $
-          A.configureKeys nec keys A.Breach
+      A.runWeb3 endpoint $ do
+        A.runAzimuth contracts pk0 $ A.configureKeys zod keys A.Breach
+        A.runAzimuth contracts pk0 $ A.configureKeys nec keys A.Breach
 
       (z1, n1) <- A.runWeb3 endpoint $
         A.runAzimuth contracts pk0 $ do
           zp <- A.getPoint zod
           np <- A.getPoint nec
           pure (zp, np)
-
-      let getRift = A.detailsRift . A.pointDetails
 
       getRift z1 `shouldSatisfy` (> (getRift z0))
       getRift n1 `shouldSatisfy` (> (getRift n0))
@@ -171,19 +160,15 @@ main = do
             A.txnGasPrice = Just 100_000_000_000
           }
 
-      let getLife = A.detailsLife . A.pointDetails
+      (z0, z1) <- A.runWeb3 endpoint $ do
+        bef <- A.runAzimuth contracts () $ A.getPoint zod
 
-      z0 <- A.runWeb3 endpoint $
-        A.runAzimuth contracts () $
-          A.getPoint zod
-
-      A.runWeb3 endpoint $
         A.runAzimuth' contracts txnParams pk0 $
-          A.configureKeys zod keys A.Rotate
+          A.configureKeys zod keys A.Breach
 
-      z1 <- A.runWeb3 endpoint $
-        A.runAzimuth contracts () $
-          A.getPoint zod
+        aft <- A.runAzimuth contracts () $ A.getPoint zod
 
-      getLife z1 `shouldSatisfy` (> (getLife z0))
+        pure (bef, aft)
+
+      getRift z1 `shouldSatisfy` (> (getRift z0))
 
