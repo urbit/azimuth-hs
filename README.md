@@ -136,3 +136,7 @@ can get a repl via:
 [nix-shell:~/src/azimuth-hs]$ cabal new-repl
 ```
 
+## See Also
+
+* [azimuth-js](https://github.com/urbit/azimuth-js) -- JavaScript bindings
+
