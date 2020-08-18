@@ -9,4 +9,4 @@ install:
 script:
   - cachix use jtobin
   - cachix push jtobin --watch-store&
-  - nix-shell --run "cabal new-test azimuth-hs:test:doctests"
+  - nix-shell --run "cabal update && cabal new-test azimuth-hs:test:doctests"
