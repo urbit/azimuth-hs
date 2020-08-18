@@ -2,9 +2,11 @@ language: nix
 nix: 2.3.6
 env:
   secure: "AHaYVCWeS8DwLzk5D+X6ABefLue+cC3sOMxRnybNfU2830d+14Ig/a81Hpg9Pu4lEXxkEoO3edBWed56pgERC/yaFDr1h0+7FXw1XSNY8NKkh/4B1t8VaGMSAw9cIa76jWs/HNQSvBLSNsiB+X4j31svcExKLC9fADV4oN5tZczkzIebysOr13e1zIemyG4gmGAz3YhncPLdBRWTSY3Gmd7lax7+ANzATmRMykkCmmpXsP0oN3gKfrMQH8OWkfOk3Loelcz+Vd5CLTeT+lBISa14Q02F0VHTue513p88ZYADkXdmuph+JOhV4aCHu3gprtBI60I1nT3FdoIDUZ15Q95tz/sv/g75bLVi6nY2ycyvaqu4mHCCVJPFEJPv5tVpR0u+a4gVJHwR69CbtOasoukXBM+BNfhhizCXzX3qf6bnozE2LFgL8kzq7ZSIhKDhZdUxrb55fL3FesiIKjH1ShQVlMOd0PsW0kUfmxyt1NzvmXjRQyn8ME8F7waes4LHNtrLbmKhwKW7lI6ktMn9UWG3XdCxXBKWuGnMOhsHMxUob2niM3b86piIIVhsECpKKtlHWh5kIlrCDEH1hj4KDw/MQRm1q22Lu89qJDN0Q1FF2gLEtB8HLPAy13WMhJotcFgTyU5ND8bH2LS5qNX7DzXOK/Y/P4PFN2vdwlFcz0s="
-script:
+before_install:
+  - echo "trusted-users = root travis" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
+install:
   - nix-env -iA cachix -f https://cachix.org/api/v1/install
+script:
   - cachix use jtobin
   - cachix push jtobin --watch-store&
   - nix-shell --run "cabal new-test azimuth-hs:test:doctests"
-
